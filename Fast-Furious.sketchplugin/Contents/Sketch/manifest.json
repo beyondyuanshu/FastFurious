@@ -1,0 +1,29 @@
+{
+  "$schema": "https://raw.githubusercontent.com/BohemianCoding/SketchAPI/develop/docs/sketch-plugin-manifest-schema.json",
+  "compatibleVersion": "55.2",
+  "bundleVersion": 1,
+  "identifier": "com.example.sketch.plugin.fast-furious",
+  "homepage": "https://github.com/beyondyuanshu/FastFurious",
+  "icon": "icon.png",
+  "commands": [
+    {
+      "name": "Create Table of Contents",
+      "identifier": "fast-furious.tableOfContents",
+      "shortcut": "shift control cmd t",
+      "script": "commandTableOfContents.js"
+    }
+  ],
+  "menu": {
+    "title": "🚗 Fast & Furious",
+    "items": [
+      "fast-furious.tableOfContents"
+    ]
+  },
+  "version": "1.0.1-6",
+  "description": "Our team special plugin",
+  "name": "Fast-Furious",
+  "disableCocoaScriptPreprocessor": true,
+  "appcast": "https://raw.githubusercontent.com/beyondyuanshu/FastFurious/master/.appcast.xml",
+  "author": "ShuYuan",
+  "authorEmail": "beyondyuanshu@gmail.com"
+}
