@@ -2,9 +2,9 @@
 
 ## Installation
 
-- [Download](../../releases/latest/download/table-of-contents.sketchplugin.zip) the latest release of the plugin
+- [Download](../../releases/latest/download/Fast-Furious.sketchplugin.zip) the latest release of the plugin
 - Un-zip
-- Double-click on table-of-contents.sketchplugin
+- Double-click on Fast-Furious.sketchplugin
 
 ## Development Guide
 
@@ -60,7 +60,7 @@ To customize webpack create `webpack.skpm.config.js` file which exports function
  **/
 module.exports = function(config, isPluginCommand) {
   /** you can change config here **/
-};
+}
 ```
 
 ### Debugging
