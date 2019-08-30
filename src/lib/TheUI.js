@@ -62,6 +62,7 @@ const theUI = (options) => {
   const getData = () => {
     // Sending a message to the WebView from your plugin command
     contents.executeJavaScript(`setTheme(${JSON.stringify(themeColor)})`)
+    contents.executeJavaScript(`setRedirectTo(${JSON.stringify(options.redirectTo)})`)
   }
   contents.on("did-start-loading", () => getData())
   contents.on("getData", () => getData())

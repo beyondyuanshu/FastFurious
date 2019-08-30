@@ -7,7 +7,6 @@ import CssBaseline from "@material-ui/core/CssBaseline"
 import Container from "@material-ui/core/Container"
 import Grid from "@material-ui/core/Grid"
 import Button from "@material-ui/core/Button"
-import getTheme from "../../theme/index"
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -32,7 +31,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }))
 
-function App() {
+function CreateTableOfContent() {
   const classes = useStyles()
 
   const [theme, setTheme] = React.useState({
@@ -43,7 +42,6 @@ function App() {
   const [state, setState] = React.useState({
     arboardSort: "Left to Right",
     arboardInnerLayersSort: "Bottom to Top",
-    theme: getTheme(),
   })
 
   window.setTheme = function(themeColor) {
@@ -145,4 +143,4 @@ function App() {
   )
 }
 
-export default App
+export default CreateTableOfContent

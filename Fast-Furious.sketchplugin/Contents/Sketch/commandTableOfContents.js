@@ -1336,6 +1336,11 @@ module.exports = function(browserWindow, panel, webview) {
     }
 
     if (/^file:\/\/.*\.html?$/.test(url)) {
+      // ensure URLs containing spaces are properly handled
+      url = NSString.alloc().initWithString(url)
+      url = url.stringByAddingPercentEncodingWithAllowedCharacters(
+        NSCharacterSet.URLQueryAllowedCharacterSet()
+      )
       webview.loadFileURL_allowingReadAccessToURL(
         NSURL.URLWithString(url),
         NSURL.URLWithString('file:///')
@@ -2270,13 +2275,13 @@ module.exports = function(browserWindow, panel, webview, options) {
       },
 
       'windowShouldClose:': function() {
-        var shouldClose = true
+        var shouldClose = 1
         this.utils.emit('close', {
           get defaultPrevented() {
             return !shouldClose
           },
           preventDefault: function() {
-            shouldClose = false
+            shouldClose = 0
           },
         })
         return shouldClose
@@ -3000,7 +3005,7 @@ __webpack_require__.r(__webpack_exports__);
 /*! no static exports found */
 /***/ (function(module, exports) {
 
-module.exports = "file://" + String(context.scriptPath).split(".sketchplugin/Contents/Sketch")[0] + ".sketchplugin/Contents/Resources/_webpack_resources/359696e4593f517140db8473c65da0a9.html";
+module.exports = "file://" + String(context.scriptPath).split(".sketchplugin/Contents/Sketch")[0] + ".sketchplugin/Contents/Resources/_webpack_resources/f810836607668e8bb46cb313f551c326.html";
 
 /***/ }),
 
@@ -3040,6 +3045,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "TocPageName", function() { return TocPageName; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ArtboardSortEnum", function() { return ArtboardSortEnum; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ArtbaordLayersSortEnum", function() { return ArtbaordLayersSortEnum; });
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 var TocPageName = "Table of Contents";
 var ArtboardSortEnum = {
   Top2BottomByLayerList: 1,
@@ -3048,10 +3055,9 @@ var ArtboardSortEnum = {
   Right2LeftByArtboard: 4,
   Top2BottomByArtboard: 5
 };
-var ArtbaordLayersSortEnum = {
-  Top2BottomByLayerList: 1,
-  ["Top2BottomByLayerList"]: 2
-};
+var ArtbaordLayersSortEnum = _defineProperty({
+  Top2BottomByLayerList: 1
+}, "Top2BottomByLayerList", 2);
 
 /***/ }),
 
@@ -3111,8 +3117,8 @@ function getTocPage() {
     _iteratorError = err;
   } finally {
     try {
-      if (!_iteratorNormalCompletion && _iterator.return != null) {
-        _iterator.return();
+      if (!_iteratorNormalCompletion && _iterator["return"] != null) {
+        _iterator["return"]();
       }
     } finally {
       if (_didIteratorError) {
@@ -3289,8 +3295,8 @@ function checkArtboardInnerLayersSort(arboardInnerLayersSort) {
     _iteratorError2 = err;
   } finally {
     try {
-      if (!_iteratorNormalCompletion2 && _iterator2.return != null) {
-        _iterator2.return();
+      if (!_iteratorNormalCompletion2 && _iterator2["return"] != null) {
+        _iterator2["return"]();
       }
     } finally {
       if (_didIteratorError2) {
@@ -3387,8 +3393,8 @@ function checkArtboardInnerLayersSort(arboardInnerLayersSort) {
     _iteratorError3 = err;
   } finally {
     try {
-      if (!_iteratorNormalCompletion3 && _iterator3.return != null) {
-        _iterator3.return();
+      if (!_iteratorNormalCompletion3 && _iterator3["return"] != null) {
+        _iterator3["return"]();
       }
     } finally {
       if (_didIteratorError3) {
@@ -3467,6 +3473,7 @@ var theUI = function theUI(options) {
   var getData = function getData() {
     // Sending a message to the WebView from your plugin command
     contents.executeJavaScript("setTheme(".concat(JSON.stringify(themeColor), ")"));
+    contents.executeJavaScript("setRedirectTo(".concat(JSON.stringify(options.redirectTo), ")"));
   };
 
   contents.on("did-start-loading", function () {
@@ -3584,8 +3591,8 @@ function tailGetLayerPosterities(layer, posterities) {
     _iteratorError = err;
   } finally {
     try {
-      if (!_iteratorNormalCompletion && _iterator.return != null) {
-        _iterator.return();
+      if (!_iteratorNormalCompletion && _iterator["return"] != null) {
+        _iterator["return"]();
       }
     } finally {
       if (_didIteratorError) {
@@ -3624,8 +3631,8 @@ function getPagePosterities(page) {
     _iteratorError2 = err;
   } finally {
     try {
-      if (!_iteratorNormalCompletion2 && _iterator2.return != null) {
-        _iterator2.return();
+      if (!_iteratorNormalCompletion2 && _iterator2["return"] != null) {
+        _iterator2["return"]();
       }
     } finally {
       if (_didIteratorError2) {

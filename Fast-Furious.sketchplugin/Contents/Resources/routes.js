@@ -81,7 +81,7 @@
 /******/
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = "./resources/views/index.js");
+/******/ 	return __webpack_require__(__webpack_require__.s = "./resources/views/routes.js");
 /******/ })
 /************************************************************************/
 /******/ ({
@@ -48577,49 +48577,6 @@ function CreateTableOfContent() {
 
 /***/ }),
 
-/***/ "./resources/views/index.js":
-/*!**********************************!*\
-  !*** ./resources/views/index.js ***!
-  \**********************************/
-/*! no exports provided */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
-/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var react_dom__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! react-dom */ "./node_modules/react-dom/index.js");
-/* harmony import */ var react_dom__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(react_dom__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var react_router_dom__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! react-router-dom */ "./node_modules/react-router-dom/esm/react-router-dom.js");
-/* harmony import */ var _routes__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./routes */ "./resources/views/routes.js");
-
-
-
-
-var App = undefined;
-
-window.setRedirectTo = function (whereTo) {
-  window.redirectTo = whereTo;
-};
-
-if (window.redirectTo !== undefined) {
-  window.location.hash = window.redirectTo;
-
-  App = function App() {
-    return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_routes__WEBPACK_IMPORTED_MODULE_3__["default"], null);
-  };
-} else {
-  window.location.hash = "/create_toc"; // TODO: pluginCall is missing in sketch-module-web-view/client
-
-  App = function App() {
-    return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_routes__WEBPACK_IMPORTED_MODULE_3__["default"], null);
-  };
-}
-
-react_dom__WEBPACK_IMPORTED_MODULE_1___default.a.render(react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(react_router_dom__WEBPACK_IMPORTED_MODULE_2__["HashRouter"], null, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(App, null)), document.getElementById("root"));
-
-/***/ }),
-
 /***/ "./resources/views/routes.js":
 /*!***********************************!*\
   !*** ./resources/views/routes.js ***!
@@ -48649,4 +48606,4 @@ __webpack_require__.r(__webpack_exports__);
 /***/ })
 
 /******/ });
-//# sourceMappingURL=index.js.map
+//# sourceMappingURL=routes.js.map

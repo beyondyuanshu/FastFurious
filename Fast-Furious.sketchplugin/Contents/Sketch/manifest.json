@@ -1,8 +1,7 @@
 {
-  "$schema": "https://raw.githubusercontent.com/BohemianCoding/SketchAPI/develop/docs/sketch-plugin-manifest-schema.json",
   "compatibleVersion": "55.2",
   "bundleVersion": 1,
-  "identifier": "com.example.sketch.plugin.fast-furious",
+  "identifier": "com.shu.yuan.fast-furious",
   "homepage": "https://github.com/beyondyuanshu/FastFurious",
   "icon": "icon.png",
   "commands": [
@@ -19,7 +18,7 @@
       "fast-furious.tableOfContents"
     ]
   },
-  "version": "1.0.1-6",
+  "version": "1.0.2",
   "description": "Our team special plugin",
   "name": "Fast-Furious",
   "disableCocoaScriptPreprocessor": true,
