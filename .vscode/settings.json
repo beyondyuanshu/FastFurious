@@ -12,15 +12,7 @@
     "**/Fast-Furious.sketchplugin": true
   },
   "editor.tabSize": 2,
-  "prettier.semi": false,
-  "prettier.singleQuote": false,
-  "prettier.trailingComma": "es5",
-  "prettier.bracketSpacing": true,
-  "prettier.arrowParens": "always",
   "editor.formatOnSave": true,
   "eslint.enable": true,
-  "prettier.printWidth": 100,
-  "prettier.tabWidth": 2,
   "javascript.format.enable": true,
-  "prettier.eslintIntegration": true
 }

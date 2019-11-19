@@ -10,15 +10,22 @@
       "identifier": "fast-furious.tableOfContents",
       "shortcut": "shift control cmd t",
       "script": "commandTableOfContents.js"
+    },
+    {
+      "name": "Export Metadata",
+      "identifier": "fast-furious.metadata",
+      "shortcut": "shift control cmd m",
+      "script": "commandMetadata.js"
     }
   ],
   "menu": {
     "title": "🚗 Fast & Furious",
     "items": [
-      "fast-furious.tableOfContents"
+      "fast-furious.tableOfContents",
+      "fast-furious.metadata"
     ]
   },
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Our team special plugin",
   "name": "Fast-Furious",
   "disableCocoaScriptPreprocessor": true,

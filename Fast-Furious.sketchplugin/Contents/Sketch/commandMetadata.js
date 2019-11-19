@@ -86,7 +86,7 @@ var exports =
 /******/
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = "./src/commandTableOfContents.js");
+/******/ 	return __webpack_require__(__webpack_require__.s = "./src/commandMetadata.js");
 /******/ })
 /************************************************************************/
 /******/ ({
@@ -5081,10 +5081,10 @@ module.exports = "file://" + String(context.scriptPath).split(".sketchplugin/Con
 
 /***/ }),
 
-/***/ "./src/commandTableOfContents.js":
-/*!***************************************!*\
-  !*** ./src/commandTableOfContents.js ***!
-  \***************************************/
+/***/ "./src/commandMetadata.js":
+/*!********************************!*\
+  !*** ./src/commandMetadata.js ***!
+  \********************************/
 /*! exports provided: default */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -5094,9 +5094,9 @@ __webpack_require__.r(__webpack_exports__);
 
 /* harmony default export */ __webpack_exports__["default"] = (function () {
   var options = {
-    identifier: 'createTableOfContent.ui',
-    title: 'Create Table of Content',
-    redirectTo: '/create_toc',
+    identifier: 'exportMetadata.ui',
+    title: 'Export Metadata',
+    redirectTo: '/export_metadata',
     width: 600,
     height: 310
   };
@@ -6206,4 +6206,4 @@ module.exports = require("stream");
 }
 globalThis['onRun'] = __skpm_run.bind(this, 'default')
 
-//# sourceMappingURL=commandTableOfContents.js.map
+//# sourceMappingURL=commandMetadata.js.map

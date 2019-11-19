@@ -10,10 +10,19 @@
       "identifier": "fast-furious.tableOfContents",
       "shortcut": "shift control cmd t",
       "script": "./commandTableOfContents.js"
+    },
+    {
+      "name": "Export Metadata",
+      "identifier": "fast-furious.metadata",
+      "shortcut": "shift control cmd m",
+      "script": "./commandMetadata.js"
     }
   ],
   "menu": {
     "title": "🚗 Fast & Furious",
-    "items": ["fast-furious.tableOfContents"]
+    "items": [
+      "fast-furious.tableOfContents",
+      "fast-furious.metadata"
+    ]
   }
 }

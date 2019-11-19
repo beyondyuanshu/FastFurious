@@ -2,9 +2,9 @@ import theUI from './lib/TheUI'
 
 export default function() {
 	const options = {
-		identifier: 'createTableOfContent.ui',
-		title: 'Create Table of Content',
-		redirectTo: '/create_toc',
+		identifier: 'exportMetadata.ui',
+		title: 'Export Metadata',
+		redirectTo: '/export_metadata',
 		width: 600,
 		height: 310,
 	}
