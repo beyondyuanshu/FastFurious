@@ -1,6 +1,7 @@
 const Sketch = require('sketch');
 const fs = require('@skpm/fs');
 const { exec } = require('@skpm/child_process');
+// const TheUI = require('./TheUI');
 
 let document = require('sketch/dom').getSelectedDocument();
 
@@ -16,6 +17,7 @@ let resultJsons = [];
 
 const exportLayerJsonOptions = { formats: 'json', output: false };
 
+let needCancel = false;
 let needParseLayers = [
 	'',
 	'artboard',
@@ -214,7 +216,21 @@ function exportLayer(layer) {
 	fs.renameSync(exportDir + '/images/' + layer.id + '.png', exportDir + '/images/' + layer.id.toLowerCase() + '.png');
 }
 
+export function cancelTask() {
+	needCancel = true;
+}
+
+function closeWindow() {
+	browserWindow.setClosable(true);
+	browserWindow.close();
+}
+
 function calcNeedParseCount(page) {
+	if (needCancel) {
+		closeWindow();
+		return;
+	}
+
 	const sketchJSON = Sketch.export(page, exportLayerJsonOptions);
 	JSON.parse(JSON.stringify(sketchJSON), function(key, value) {
 		if (needParseLayers.includes(value._class)) needParseCount += 1;
@@ -234,6 +250,11 @@ function calcNeedParseCount(page) {
 }
 
 function handleSketchJSON(sketchJSON) {
+	if (needCancel) {
+		closeWindow();
+		return;
+	}
+
 	// parse
 	let hasParse = false;
 	let hasAllParse = false;
@@ -311,7 +332,7 @@ function handleSketchJSON(sketchJSON) {
 			}
 
 			Sketch.UI.message('Export Successfully! 🙌');
-			browserWindow.close();
+			closeWindow();
 		}
 	} else {
 		hasParseCount += 1;
@@ -320,7 +341,7 @@ function handleSketchJSON(sketchJSON) {
 	}
 }
 
-export default function(exportPath, contents, win) {
+export function exportMetadata(exportPath, contents, win) {
 	exportDir = exportPath;
 	browserWindow = win;
 	webContents = contents;

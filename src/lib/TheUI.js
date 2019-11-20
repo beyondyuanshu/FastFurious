@@ -1,9 +1,11 @@
 import BrowserWindow from 'sketch-module-web-view';
 import CreateTableOfContents from '../lib/CreateTableOfContents';
-import ExportMetadata from '../lib/ExportMetadata';
+import { exportMetadata, cancelTask } from '../lib/ExportMetadata';
 import getTheme from '../../resources/views/theme/index';
 import { getDefaultExportDir, getExportDir } from './Utilities';
 import dialog from '@skpm/dialog';
+
+let handingTask = false;
 
 const theUI = options => {
 	const themeColor = typeof MSTheme !== 'undefined' && MSTheme.sharedTheme().isDark() ? 'dark' : 'light';
@@ -34,29 +36,35 @@ const theUI = options => {
 	});
 
 	// Sending a message to the plugin from the WebView
-	win.on('closed', () => {
+	win.on('closed', e => {
 		win = null;
 	});
 
-	contents.on('cancel', () => {
-		win.close();
+	contents.on('cancel', (needShowAlert = true) => {
+		if (needShowAlert) {
+			contents.executeJavaScript(`showExportAlert()`);
+		} else {
+			if (handingTask) {
+				cancelTask();
+			} else {
+				win.setClosable(true);
+				win.close();
+			}
+		}
 	});
 
 	win.loadURL(require('../../resources/webview.html'));
 
 	contents.on('createTableOfContent', () => {
-		console.log('createTableOfContent');
 		CreateTableOfContents(artboardSort, artboardInnerLayersSort);
 		win.close();
 	});
 
 	contents.on('exportMetadata', path => {
-		ExportMetadata(path + '/' + getExportDir(), contents, win);
-		// win.close();
-		// dialog.showMessageBoxSync({
-		// 	buttons: ['OK'],
-		// 	message: 'Export Finished',
-		// })
+		handingTask = true;
+		win.setClosable(false);
+		exportMetadata(path + '/' + getExportDir(), contents, win);
+		// handingTask = false;
 	});
 
 	contents.on('openFolder', () => {

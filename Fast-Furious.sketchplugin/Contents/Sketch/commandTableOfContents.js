@@ -5484,11 +5484,13 @@ function checkArtboardInnerLayersSort(arboardInnerLayersSort) {
 /*!***********************************!*\
   !*** ./src/lib/ExportMetadata.js ***!
   \***********************************/
-/*! exports provided: default */
+/*! exports provided: cancelTask, exportMetadata */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "cancelTask", function() { return cancelTask; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "exportMetadata", function() { return exportMetadata; });
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
 var Sketch = __webpack_require__(/*! sketch */ "sketch");
@@ -5496,7 +5498,8 @@ var Sketch = __webpack_require__(/*! sketch */ "sketch");
 var fs = __webpack_require__(/*! @skpm/fs */ "./node_modules/@skpm/fs/index.js");
 
 var _require = __webpack_require__(/*! @skpm/child_process */ "./node_modules/@skpm/child_process/index.js"),
-    exec = _require.exec;
+    exec = _require.exec; // const TheUI = require('./TheUI');
+
 
 var document = __webpack_require__(/*! sketch/dom */ "sketch/dom").getSelectedDocument();
 
@@ -5512,6 +5515,7 @@ var exportLayerJsonOptions = {
   formats: 'json',
   output: false
 };
+var needCancel = false;
 var needParseLayers = ['', 'artboard', 'text', 'bitmap', 'group', 'shapeGroup', 'symbolInstance', 'rectangle', 'oval', 'shapePath', 'triangle', 'star', 'polygon', 'slice', 'MSImmutableHotspotLayer'];
 
 function parsePage(json) {
@@ -5691,7 +5695,21 @@ function exportLayer(layer) {
   fs.renameSync(exportDir + '/images/' + layer.id + '.png', exportDir + '/images/' + layer.id.toLowerCase() + '.png');
 }
 
+function cancelTask() {
+  needCancel = true;
+}
+
+function closeWindow() {
+  browserWindow.setClosable(true);
+  browserWindow.close();
+}
+
 function calcNeedParseCount(page) {
+  if (needCancel) {
+    closeWindow();
+    return;
+  }
+
   var sketchJSON = Sketch["export"](page, exportLayerJsonOptions);
   JSON.parse(JSON.stringify(sketchJSON), function (key, value) {
     if (needParseLayers.includes(value._class)) needParseCount += 1;
@@ -5713,7 +5731,12 @@ function calcNeedParseCount(page) {
 }
 
 function handleSketchJSON(sketchJSON) {
-  // parse
+  if (needCancel) {
+    closeWindow();
+    return;
+  } // parse
+
+
   var hasParse = false;
   var hasAllParse = false;
   var json = JSON.parse(JSON.stringify(sketchJSON), function (key, value) {
@@ -5782,7 +5805,7 @@ function handleSketchJSON(sketchJSON) {
       }
 
       Sketch.UI.message('Export Successfully! 🙌');
-      browserWindow.close();
+      closeWindow();
     }
   } else {
     hasParseCount += 1;
@@ -5791,7 +5814,7 @@ function handleSketchJSON(sketchJSON) {
   }
 }
 
-/* harmony default export */ __webpack_exports__["default"] = (function (exportPath, contents, win) {
+function exportMetadata(exportPath, contents, win) {
   exportDir = exportPath;
   browserWindow = win;
   webContents = contents; // clear output first
@@ -5825,7 +5848,7 @@ function handleSketchJSON(sketchJSON) {
       calcNeedParseCount(needParsePages[0]);
     }
   });
-});
+}
 
 /***/ }),
 
@@ -5852,6 +5875,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+var handingTask = false;
 
 var theUI = function theUI(options) {
   var themeColor = typeof MSTheme !== 'undefined' && MSTheme.sharedTheme().isDark() ? 'dark' : 'light';
@@ -5877,24 +5901,32 @@ var theUI = function theUI(options) {
     win.show();
   }); // Sending a message to the plugin from the WebView
 
-  win.on('closed', function () {
+  win.on('closed', function (e) {
     win = null;
   });
   contents.on('cancel', function () {
-    win.close();
+    var needShowAlert = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+
+    if (needShowAlert) {
+      contents.executeJavaScript("showExportAlert()");
+    } else {
+      if (handingTask) {
+        Object(_lib_ExportMetadata__WEBPACK_IMPORTED_MODULE_2__["cancelTask"])();
+      } else {
+        win.setClosable(true);
+        win.close();
+      }
+    }
   });
   win.loadURL(__webpack_require__(/*! ../../resources/webview.html */ "./resources/webview.html"));
   contents.on('createTableOfContent', function () {
-    console.log('createTableOfContent');
     Object(_lib_CreateTableOfContents__WEBPACK_IMPORTED_MODULE_1__["default"])(artboardSort, artboardInnerLayersSort);
     win.close();
   });
   contents.on('exportMetadata', function (path) {
-    Object(_lib_ExportMetadata__WEBPACK_IMPORTED_MODULE_2__["default"])(path + '/' + Object(_Utilities__WEBPACK_IMPORTED_MODULE_4__["getExportDir"])(), contents, win); // win.close();
-    // dialog.showMessageBoxSync({
-    // 	buttons: ['OK'],
-    // 	message: 'Export Finished',
-    // })
+    handingTask = true;
+    win.setClosable(false);
+    Object(_lib_ExportMetadata__WEBPACK_IMPORTED_MODULE_2__["exportMetadata"])(path + '/' + Object(_Utilities__WEBPACK_IMPORTED_MODULE_4__["getExportDir"])(), contents, win); // handingTask = false;
   });
   contents.on('openFolder', function () {
     var array = _skpm_dialog__WEBPACK_IMPORTED_MODULE_5___default.a.showOpenDialogSync({
