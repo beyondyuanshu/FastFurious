@@ -12,6 +12,7 @@ import IconButton from '@material-ui/core/IconButton';
 import FolderOpenRounded from '@material-ui/icons/FolderOpenRounded';
 import ProgressPage from './ProgressPage';
 import AlertsDialog from './AlertsDialog';
+import LayersTree from './LayersTree';
 
 const useStyles = makeStyles(theme => ({
 	root: {
@@ -103,6 +104,7 @@ function ExportMetadata() {
 	return (
 		<div className={classes.root}>
 			<CssBaseline />
+			{/* <LayersTree></LayersTree> */}
 			{state.exporting && <ProgressPage />}
 			{!state.exporting && (
 				<Container className={classes.container} margin="500px" maxWidth="sm">

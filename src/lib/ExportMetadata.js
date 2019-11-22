@@ -220,6 +220,24 @@ export function cancelTask() {
 	needCancel = true;
 }
 
+export function getTargetLayers() {
+	let pages = document.pages;
+	let nodes = [];
+	pages.forEach(page => {
+		let children = [];
+		const sketchJSON = Sketch.export(page, exportLayerJsonOptions);
+		JSON.parse(JSON.stringify(sketchJSON), function(key, value) {
+			if (value._class === 'artboard') {
+				children.push({ value: value.do_objectID, label: value.name });
+			}
+			return value;
+		});
+		nodes.push({ value: page.id, label: page.name, children: children });
+	});
+	console.log(nodes);
+	return nodes;
+}
+
 function closeWindow() {
 	browserWindow.setClosable(true);
 	browserWindow.close();

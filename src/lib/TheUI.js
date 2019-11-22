@@ -1,6 +1,6 @@
 import BrowserWindow from 'sketch-module-web-view';
 import CreateTableOfContents from '../lib/CreateTableOfContents';
-import { exportMetadata, cancelTask } from '../lib/ExportMetadata';
+import { exportMetadata, cancelTask, getTargetLayers } from '../lib/ExportMetadata';
 import getTheme from '../../resources/views/theme/index';
 import { getDefaultExportDir, getExportDir } from './Utilities';
 import dialog from '@skpm/dialog';
@@ -96,6 +96,10 @@ const theUI = options => {
 
 		if (options.redirectTo === '/export_metadata') {
 			contents.executeJavaScript(`setExportDir(${JSON.stringify(getDefaultExportDir())})`);
+
+			setTimeout(function() {
+				contents.executeJavaScript(`setExportNodes(${JSON.stringify(getTargetLayers())})`);
+			}, 1000);
 		}
 	};
 	contents.on('did-start-loading', () => getData());

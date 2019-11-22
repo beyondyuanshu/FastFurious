@@ -5077,7 +5077,7 @@ __webpack_require__.r(__webpack_exports__);
 /*! no static exports found */
 /***/ (function(module, exports) {
 
-module.exports = "file://" + String(context.scriptPath).split(".sketchplugin/Contents/Sketch")[0] + ".sketchplugin/Contents/Resources/_webpack_resources/f810836607668e8bb46cb313f551c326.html";
+module.exports = "file://" + String(context.scriptPath).split(".sketchplugin/Contents/Sketch")[0] + ".sketchplugin/Contents/Resources/_webpack_resources/fedcb36887af924ae92824d43f90ed04.html";
 
 /***/ }),
 
@@ -5484,12 +5484,13 @@ function checkArtboardInnerLayersSort(arboardInnerLayersSort) {
 /*!***********************************!*\
   !*** ./src/lib/ExportMetadata.js ***!
   \***********************************/
-/*! exports provided: cancelTask, exportMetadata */
+/*! exports provided: cancelTask, getTargetLayers, exportMetadata */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "cancelTask", function() { return cancelTask; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getTargetLayers", function() { return getTargetLayers; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "exportMetadata", function() { return exportMetadata; });
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
@@ -5697,6 +5698,31 @@ function exportLayer(layer) {
 
 function cancelTask() {
   needCancel = true;
+}
+function getTargetLayers() {
+  var pages = document.pages;
+  var nodes = [];
+  pages.forEach(function (page) {
+    var children = [];
+    var sketchJSON = Sketch["export"](page, exportLayerJsonOptions);
+    JSON.parse(JSON.stringify(sketchJSON), function (key, value) {
+      if (value._class === 'artboard') {
+        children.push({
+          value: value.do_objectID,
+          label: value.name
+        });
+      }
+
+      return value;
+    });
+    nodes.push({
+      value: page.id,
+      label: page.name,
+      children: children
+    });
+  });
+  console.log(nodes);
+  return nodes;
 }
 
 function closeWindow() {
@@ -5955,6 +5981,9 @@ var theUI = function theUI(options) {
 
     if (options.redirectTo === '/export_metadata') {
       contents.executeJavaScript("setExportDir(".concat(JSON.stringify(Object(_Utilities__WEBPACK_IMPORTED_MODULE_4__["getDefaultExportDir"])()), ")"));
+      setTimeout(function () {
+        contents.executeJavaScript("setExportNodes(".concat(JSON.stringify(Object(_lib_ExportMetadata__WEBPACK_IMPORTED_MODULE_2__["getTargetLayers"])()), ")"));
+      }, 1000);
     }
   };
 
