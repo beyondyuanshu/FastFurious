@@ -1,12 +1,12 @@
 {
   "compatibleVersion": "55.2",
   "bundleVersion": 1,
-  "identifier": "com.shu.yuan.fast-furious",
+  "identifier": "com.ecarx.fast-furious",
   "homepage": "https://github.com/beyondyuanshu/FastFurious",
   "icon": "icon.png",
   "commands": [
     {
-      "name": "Create Table of Contents",
+      "name": "生成目录",
       "identifier": "fast-furious.tableOfContents",
       "shortcut": "shift control cmd t",
       "script": "commandTableOfContents.js"
@@ -30,6 +30,6 @@
   "name": "Fast-Furious",
   "disableCocoaScriptPreprocessor": true,
   "appcast": "https://raw.githubusercontent.com/beyondyuanshu/FastFurious/master/.appcast.xml",
-  "author": "ShuYuan",
+  "author": "ECARX",
   "authorEmail": "beyondyuanshu@gmail.com"
 }

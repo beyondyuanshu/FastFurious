@@ -75623,7 +75623,7 @@ function LinearDeterminate() {
   }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_material_ui_core__WEBPACK_IMPORTED_MODULE_4__["Grid"], {
     container: true,
     alignItems: "center",
-    spacing: "3",
+    spacing: 3,
     style: {
       display: 'flex'
     }

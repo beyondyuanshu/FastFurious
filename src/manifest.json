@@ -1,28 +1,25 @@
 {
-  "compatibleVersion": "55.2",
-  "bundleVersion": 1,
-  "identifier": "com.shu.yuan.fast-furious",
-  "homepage": "https://github.com/beyondyuanshu/FastFurious",
-  "icon": "icon.png",
-  "commands": [
-    {
-      "name": "Create Table of Contents",
-      "identifier": "fast-furious.tableOfContents",
-      "shortcut": "shift control cmd t",
-      "script": "./commandTableOfContents.js"
-    },
-    {
-      "name": "Export Metadata",
-      "identifier": "fast-furious.metadata",
-      "shortcut": "shift control cmd m",
-      "script": "./commandMetadata.js"
-    }
-  ],
-  "menu": {
-    "title": "🚗 Fast & Furious",
-    "items": [
-      "fast-furious.tableOfContents",
-      "fast-furious.metadata"
-    ]
-  }
+	"compatibleVersion": "55.2",
+	"bundleVersion": 1,
+	"identifier": "com.ecarx.fast-furious",
+	"homepage": "https://github.com/beyondyuanshu/FastFurious",
+	"icon": "icon.png",
+	"commands": [
+		{
+			"name": "生成目录",
+			"identifier": "fast-furious.tableOfContents",
+			"shortcut": "shift control cmd t",
+			"script": "./commandTableOfContents.js"
+		},
+		{
+			"name": "Export Metadata",
+			"identifier": "fast-furious.metadata",
+			"shortcut": "shift control cmd m",
+			"script": "./commandMetadata.js"
+		}
+	],
+	"menu": {
+		"title": "🚗 Fast & Furious",
+		"items": ["fast-furious.tableOfContents", "fast-furious.metadata"]
+	}
 }

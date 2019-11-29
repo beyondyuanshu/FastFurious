@@ -5137,15 +5137,15 @@ var ArtbaordLayersSortEnum = _defineProperty({
 /*!******************************************!*\
   !*** ./src/lib/CreateTableOfContents.js ***!
   \******************************************/
-/*! exports provided: default */
+/*! exports provided: setParentHeadingOrOverrideValue, createTableOfContents */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var sketch__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! sketch */ "sketch");
-/* harmony import */ var sketch__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(sketch__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _Utilities__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Utilities */ "./src/lib/Utilities.js");
-/* harmony import */ var _Constants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./Constants */ "./src/lib/Constants.js");
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "setParentHeadingOrOverrideValue", function() { return setParentHeadingOrOverrideValue; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "createTableOfContents", function() { return createTableOfContents; });
+/* harmony import */ var _Utilities__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Utilities */ "./src/lib/Utilities.js");
+/* harmony import */ var _Constants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Constants */ "./src/lib/Constants.js");
 function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest(); }
 
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
@@ -5153,7 +5153,6 @@ function _nonIterableRest() { throw new TypeError("Invalid attempt to destructur
 function _iterableToArrayLimit(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
 
 function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
-
 
 
 
@@ -5168,20 +5167,419 @@ var Group = __webpack_require__(/*! sketch/dom */ "sketch/dom").Group;
 
 var Text = __webpack_require__(/*! sketch/dom */ "sketch/dom").Text;
 
+var ShapePath = __webpack_require__(/*! sketch/dom */ "sketch/dom").ShapePath;
+
+var Settings = __webpack_require__(/*! sketch/settings */ "sketch/settings");
+
+var UI = __webpack_require__(/*! sketch/ui */ "sketch/ui");
+
 var document = __webpack_require__(/*! sketch/dom */ "sketch/dom").getSelectedDocument();
 
-function getTocPage() {
-  var pages = document.pages;
+var browserWindow = null;
+var webContents = null;
+var headingsMap = new Map();
+var noParentHeadingArtboard;
+var invalidHeadingOverride;
+var ContentWidth = 7000;
+var ContentHeight = 4949;
+var GroupSpacing = 700;
+var GroupTopMargin = 500;
+var GroupLeftAndRightMargin = 200;
+var GroupCounts = 3;
+var GroupWidth = (ContentWidth - GroupLeftAndRightMargin * 2 - GroupSpacing * 2) / GroupCounts;
+
+function checkArtboardSort(artboardSort) {
+  if (artboardSort === 'Top to Bottom') {
+    return _Constants__WEBPACK_IMPORTED_MODULE_1__["ArtboardSortEnum"].Top2BottomByLayerList;
+  } else if (artboardSort === 'Bottom to Top') {
+    return _Constants__WEBPACK_IMPORTED_MODULE_1__["ArtboardSortEnum"].Bottom2TopByLayerList;
+  } else if (artboardSort === 'Left to Right') {
+    return _Constants__WEBPACK_IMPORTED_MODULE_1__["ArtboardSortEnum"].Left2RightByArtboard;
+  } else if (artboardSort === 'Right to Left') {
+    return _Constants__WEBPACK_IMPORTED_MODULE_1__["ArtboardSortEnum"].Right2LeftByArtboard;
+  } else if (artboardSort === 'Top to Bottom 1') {
+    return _Constants__WEBPACK_IMPORTED_MODULE_1__["ArtboardSortEnum"].Top2BottomByArtboard;
+  }
+}
+
+function createHeading(artboard, originalX, originalY, headingLevel, headingText, pageNumber) {
+  var groupHeight; // 序号及标题
+
+  var serialAndContentX;
+  var serialAndContentHeight;
+  var serialAndContentFontSize;
+  var serialAndContentFontWeight;
+  var serialAndContentFontColor;
+
+  if (headingLevel === 1) {
+    serialAndContentX = 0;
+    serialAndContentHeight = 90;
+    serialAndContentFontSize = 64;
+    serialAndContentFontWeight = 6; // Medium
+
+    serialAndContentFontColor = '#333333';
+    groupHeight = serialAndContentHeight;
+  } else if (headingLevel === 2) {
+    serialAndContentX = 80;
+    serialAndContentHeight = 78;
+    serialAndContentFontSize = 56;
+    serialAndContentFontWeight = 4; // Regular
+
+    serialAndContentFontColor = '#333333';
+    groupHeight = serialAndContentHeight;
+  } else {
+    serialAndContentX = 160;
+    serialAndContentHeight = 67;
+    serialAndContentFontSize = 48;
+    serialAndContentFontWeight = 4; // Regular
+
+    serialAndContentFontColor = '#666666';
+    groupHeight = serialAndContentHeight;
+  }
+
+  var serialAndContent = new Text({
+    text: headingText,
+    // NOTE: list text first! text maybe change the name
+    name: 'serialAndContent',
+    style: {
+      borders: [],
+      fontFamily: 'PingFang SC',
+      fontSize: serialAndContentFontSize,
+      fontWeight: serialAndContentFontWeight,
+      textColor: serialAndContentFontColor,
+      alignment: 'left',
+      verticalAlignment: 'center'
+    },
+    frame: {
+      x: serialAndContentX,
+      y: (groupHeight - serialAndContentHeight) / 2,
+      // 无法固定高度，用此方法代替
+      height: groupHeight
+    }
+  }); // 连接线
+
+  var separator = new ShapePath({
+    name: 'separator',
+    shapeType: ShapePath.ShapeType.Custom,
+    style: {
+      borders: [{
+        thickness: 3
+      }],
+      borderOptions: {
+        dashPattern: [20, 5, 20, 5]
+      }
+    },
+    frame: {
+      x: serialAndContent.frame.x + serialAndContent.frame.width + 100,
+      y: 0,
+      width: GroupWidth - (serialAndContent.frame.x + serialAndContent.frame.width + 100) - 100,
+      height: groupHeight
+    },
+    points: [{
+      point: {
+        x: 0,
+        y: 0.5
+      }
+    }, {
+      point: {
+        x: 1,
+        y: 0.5
+      }
+    }]
+  }); // 页码
+
+  var pageNumberFontSize;
+
+  if (headingLevel === 1) {
+    pageNumberFontSize = 56;
+  } else if (headingLevel === 2) {
+    pageNumberFontSize = 56;
+  } else if (headingLevel === 3) {
+    pageNumberFontSize = 56;
+  }
+
+  var page = new Text({
+    text: pageNumber.toString(),
+    name: 'pageNumber',
+    style: {
+      borders: [],
+      fontFamily: 'PingFang SC',
+      fontSize: pageNumberFontSize,
+      fontWeight: 4,
+      // Regular
+      textColor: '#333333',
+      alignment: 'right',
+      verticalAlignment: 'center'
+    },
+    frame: {
+      x: GroupWidth - 100,
+      y: (groupHeight - 78) / 2,
+      width: 100,
+      height: groupHeight
+    }
+  }); // 占位，用于设定 Group 的高度
+
+  var placeholder = new ShapePath({
+    name: 'placeholder',
+    shapeType: ShapePath.ShapeType.Custom,
+    frame: {
+      x: 0,
+      y: 0,
+      width: 1,
+      height: groupHeight
+    }
+  });
+  var group = new Group({
+    parent: artboard,
+    name: headingText,
+    frame: {
+      x: originalX,
+      y: originalY,
+      width: GroupWidth,
+      height: groupHeight
+    }
+  });
+  group.adjustToFit();
+  group.layers = [placeholder, serialAndContent, separator, page];
+  return group;
+}
+
+function setParentHeadingOrOverrideValue(value) {
+  console.log(value, invalidHeadingOverride);
+
+  if (invalidHeadingOverride) {
+    invalidHeadingOverride.value = value;
+    invalidHeadingOverride = undefined;
+  }
+
+  if (noParentHeadingArtboard) {
+    Settings.setLayerSettingForKey(noParentHeadingArtboard, 'parentHeading', value);
+    noParentHeadingArtboard = undefined;
+  }
+}
+
+function checkHeadingSerial(lastSerial, currentSerial) {
+  var hasError = false;
+
+  if (lastSerial.length === 0) {
+    if (currentSerial !== '1.') {
+      hasError = true;
+    }
+  } else if (lastSerial.endsWith('.')) {
+    var tempLastSerial = lastSerial;
+
+    if (lastSerial.split('.')[0] === '1' && currentSerial.split('.')[0] === '3') {
+      tempLastSerial = '2.';
+    }
+
+    if (currentSerial !== tempLastSerial + '1' && currentSerial !== parseInt(tempLastSerial) + 1 + '.') {
+      hasError = true;
+    }
+  } else {
+    var array = lastSerial.split('.');
+    var newArray;
+    var secondLastNumber;
+    var serialLength = array.length;
+
+    if (serialLength > 2) {
+      newArray = array;
+      secondLastNumber = newArray[newArray.length - 2];
+      newArray.splice(newArray.length - 1, 2);
+    }
+
+    var lastNumber = array[array.length - 1];
+    array.splice(array.length - 1, 1);
+
+    if (currentSerial !== lastSerial + '.1' && currentSerial !== array.join('.') + (parseInt(lastNumber) + 1) && serialLength > 2 && currentSerial !== newArray.join('.') + (parseInt(secondLastNumber) + 1)) {
+      hasError = true;
+    }
+  }
+
+  return hasError;
+}
+
+function checkHeadings(artboards) {
+  var artboardIndex = 0;
+  var lastSerial = ''; // 遍历所有画板，找出所有标题
+
+  for (var index = 0; index < artboards.length; index++) {
+    ++artboardIndex;
+    var artboard = artboards[index];
+    var type = Settings.layerSettingForKey(artboard, 'layerType');
+
+    if (type === 'TOC') {
+      continue;
+    } // 遍历画板所有层，找出标题层
+
+
+    for (var _index = 0; _index < artboard.layers.length; _index++) {
+      var layer = artboard.layers[_index];
+
+      if (layer.type === 'SymbolInstance' && layer.master.name === 'PageTitle') {
+        // 遍历标题所有层，找出标题内容
+        for (var _index2 = 0; _index2 < layer.overrides.length; _index2++) {
+          var override = layer.overrides[_index2];
+
+          if (override.affectedLayer.name === 'title') {
+            // 匹配六级标题：（1.）（1.1）（1.1.1）...
+            var pattern = /(^[1-9][0-9]{0,}\. )|(^[1-9][0-9]{0,}((\.[1-9][0-9]{0,}){1,5}) )/;
+            var regex = new RegExp(pattern);
+
+            if (override.value.length && !regex.test(override.value)) {
+              // 标题格式不正确，提示用户修正
+              console.log('invalid format heading:', override.value);
+              invalidHeadingOverride = override;
+              webContents.executeJavaScript("showCreateTocHint('\u65E0\u6548\u7684\u6807\u9898\uFF0C\u6B63\u786E\u683C\u5F0F\u793A\u4F8B\uFF1A\u30101. XXX\u3011 \u6216\u8005 \u30101.1 XXX\u3011', ".concat(JSON.stringify(override.value), ")"));
+              return false;
+            } else {
+              // 标题格式正确，判断是否需要提示指定父级标题
+              var currentSerial = override.value.split(' ')[0];
+
+              if (currentSerial.endsWith('1') && !currentSerial.startsWith(lastSerial)) {
+                var parentHeading = Settings.layerSettingForKey(artboard, 'parentHeading');
+
+                if (!parentHeading || !parentHeading.startsWith(currentSerial.slice(0, -2))) {
+                  console.log('should add parent heading for this layer:', artboard.name);
+                  document.selectedLayers.forEach(function (layer) {
+                    layer.selected = false;
+                  });
+                  artboard.parent.selected = true;
+                  artboard.selected = true;
+                  document.centerOnLayer(artboard);
+                  noParentHeadingArtboard = artboard;
+                  webContents.executeJavaScript("showCreateTocHint('Should add a parent heading for this layer!', '')");
+                  return false;
+                } else {
+                  var serial = parentHeading.split(' ')[0];
+
+                  if (checkHeadingSerial(lastSerial, serial)) {
+                    document.selectedLayers.forEach(function (layer) {
+                      layer.selected = false;
+                    });
+                    artboard.parent.selected = true;
+                    artboard.selected = true;
+                    document.centerOnLayer(artboard);
+                    invalidHeadingOverride = override;
+                    webContents.executeJavaScript("showCreateTocHint('\u7236\u7EA7\u6807\u9898\u5E8F\u53F7\u4E0D\u6B63\u786E\uFF0C\u8BF7\u66F4\u6B63\u3002\u4E0A\u4E00\u6807\u9898\u5E8F\u53F7\u4E3A\uFF1A' + ".concat(JSON.stringify(lastSerial), ", ").concat(JSON.stringify(parentHeading), ")"));
+                    return false;
+                  }
+
+                  lastSerial = parentHeading.split(' ')[0];
+                  headingsMap.set(parentHeading, artboardIndex);
+                }
+              } // 检查标题序号
+
+
+              if (checkHeadingSerial(lastSerial, currentSerial)) {
+                document.selectedLayers.forEach(function (layer) {
+                  layer.selected = false;
+                });
+                artboard.parent.selected = true;
+                artboard.selected = true;
+                document.centerOnLayer(artboard);
+                invalidHeadingOverride = override;
+                webContents.executeJavaScript("showCreateTocHint('\u6807\u9898\u5E8F\u53F7\u4E0D\u6B63\u786E\uFF0C\u8BF7\u66F4\u6B63\u3002\u4E0A\u4E00\u6807\u9898\u5E8F\u53F7\u4E3A\uFF1A' + ".concat(JSON.stringify(lastSerial), ", ").concat(JSON.stringify(override.value), ")"));
+                return false;
+              }
+
+              headingsMap.set(override.value, artboardIndex);
+              lastSerial = currentSerial;
+            }
+
+            break;
+          }
+        }
+
+        break;
+      }
+    }
+  }
+
+  return true;
+}
+
+function addHeading(page, headingsMap, topBannerMaster, bottomBannerMaster) {
+  // delete contents artboard
+  page.layers.forEach(function (artboard) {
+    if (Settings.layerSettingForKey(artboard, 'layerType') === 'TOC') {
+      artboard.remove();
+    }
+  });
+  var artboard;
+  var contentsArtboards = [];
+  var contentsPageIndex = 0;
+  var lastLevel = 1;
+  var column = 0;
+  var originalY = GroupTopMargin;
+  var needAddNewArtboard = true;
   var _iteratorNormalCompletion = true;
   var _didIteratorError = false;
   var _iteratorError = undefined;
 
   try {
-    for (var _iterator = pages[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-      var page = _step.value;
+    for (var _iterator = headingsMap[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+      var _step$value = _slicedToArray(_step.value, 2),
+          headingText = _step$value[0],
+          pageNumber = _step$value[1];
 
-      if (page.name === _Constants__WEBPACK_IMPORTED_MODULE_2__["TocPageName"]) {
-        return page;
+      // create artboard
+      if (needAddNewArtboard) {
+        artboard = new Artboard({
+          parent: page,
+          name: 'Contents ' + (contentsPageIndex + 1).toString(),
+          frame: {
+            x: 0 + (ContentWidth + 50) * contentsPageIndex,
+            y: 0,
+            width: ContentWidth,
+            height: ContentHeight
+          }
+        });
+        Settings.setLayerSettingForKey(artboard, 'layerType', 'TOC');
+        contentsArtboards.push(artboard);
+        var topBanner = topBannerMaster[0].createNewInstance();
+        var bottomBanner = bottomBannerMaster[0].createNewInstance();
+        bottomBanner.frame.y = ContentHeight - bottomBanner.frame.height;
+        topBanner.parent = artboard;
+        bottomBanner.parent = artboard;
+        contentsPageIndex += 1;
+      } // check level
+
+
+      var currentLevel = void 0;
+      var serialText = headingText.split(' ')[0];
+
+      if (serialText.endsWith('.')) {
+        currentLevel = 1;
+      } else {
+        currentLevel = serialText.split('.').length;
+      } // create headings
+
+
+      var originalX = GroupLeftAndRightMargin + GroupWidth * column + GroupSpacing * column;
+
+      if (!needAddNewArtboard) {
+        if (lastLevel === 1 && currentLevel === 1) {
+          originalY += 100;
+        } else {
+          originalY += 46;
+        }
+      }
+
+      lastLevel = currentLevel;
+      var group = createHeading(artboard, originalX, originalY, currentLevel, headingText, pageNumber);
+
+      if (group.frame.y > 4000) {
+        column += 1;
+        originalY = GroupTopMargin;
+      } else {
+        originalY += group.frame.height;
+      }
+
+      if (column > 2) {
+        needAddNewArtboard = true;
+        column = 0;
+      } else {
+        needAddNewArtboard = false;
       }
     }
   } catch (err) {
@@ -5199,284 +5597,118 @@ function getTocPage() {
     }
   }
 
-  return undefined;
+  return contentsArtboards;
 }
 
-function getFontSize(level) {
-  if (level === 1) {
-    return 60;
-  } else if (level === 2) {
-    return 50;
-  } else if (level === 3) {
-    return 40;
-  } else if (level === 4) {
-    return 30;
-  } else if (level === 5) {
-    return 30;
-  } else if (level === 6) {
-    return 30;
-  }
-}
+function updateContentsPage(contentsArtboards, headingsMap) {
+  // set contents page title
+  var contentsTitles = [];
 
-function createHeading(artboard, serialIdx, pageIdx, layer) {
-  var heading = Object(_Utilities__WEBPACK_IMPORTED_MODULE_1__["getHeading"])(layer);
-  var headingLevel = Object(_Utilities__WEBPACK_IMPORTED_MODULE_1__["getHeadingLevel"])(layer); // init group
+  for (var index = 0; index < contentsArtboards.length; index++) {
+    var artboard = contentsArtboards[index];
+    var override = artboard.layers[0].overrides[1];
 
-  var leftRect = new Text({
-    text: '',
-    name: 'Left Space'
-  });
-  leftRect.frame = {
-    x: 0,
-    y: 0,
-    width: 50,
-    heigth: 100
-  };
-  var rightRect = new Text({
-    text: '',
-    name: 'Right Space'
-  });
-  rightRect.frame = {
-    x: 950,
-    y: 0,
-    width: 50,
-    heigth: 100 // NOTE: height 在此处并不生效！
-
-  };
-  var group = new Group({
-    parent: artboard,
-    name: serialIdx
-  });
-  group.adjustToFit();
-  var serialAndContent = new Text({
-    text: serialIdx + ' ' + heading,
-    // NOTE: list text first! text maybe change the name
-    name: 'Serial and Content',
-    style: {
-      borders: [],
-      fontFamily: '平方-简',
-      fontSize: getFontSize(headingLevel),
-      textColor: '#000000',
-      alignment: 'left',
-      verticalAlignment: 'center'
-    }
-  });
-  var combinator = new Text({
-    text: '......................',
-    name: 'Combinator',
-    style: {
-      borders: [],
-      fontFamily: '平方-简',
-      fontSize: 40,
-      textColor: '#000000',
-      alignment: 'left',
-      verticalAlignment: 'center'
-    }
-  });
-  var pageNumber = new Text({
-    text: pageIdx.toString(),
-    name: 'Page Number',
-    style: {
-      borders: [],
-      fontFamily: '平方-简',
-      fontSize: 40,
-      textColor: '#000000',
-      alignment: 'right',
-      verticalAlignment: 'center'
-    }
-  });
-  group.frame = {
-    x: 0,
-    width: 1000,
-    height: 100
-  };
-  serialAndContent.frame = {
-    x: 50 * headingLevel,
-    y: (group.frame.height - serialAndContent.frame.height) / 2
-  };
-  var text = '';
-  var combinatorWidth = 800 - serialAndContent.frame.x - serialAndContent.frame.width;
-
-  for (var i = 0; i < combinatorWidth / 11; ++i) {
-    text += '.';
-    combinator.text = text;
-
-    if (combinator.frame.width >= combinatorWidth) {
-      break;
-    }
-  }
-
-  combinator.name = 'Combinator'; // NOTE: 设置 text 后需要恢复 name!
-
-  combinator.fixedWidth = true;
-  combinator.frame = {
-    x: serialAndContent.frame.x + serialAndContent.frame.width + 50,
-    y: (group.frame.height - combinator.frame.height) / 2,
-    width: combinatorWidth
-  };
-  combinator.style.alignment = 'right';
-  pageNumber.fixedWidth = true;
-  pageNumber.frame = {
-    x: 850,
-    y: (group.frame.height - pageNumber.frame.height) / 2,
-    width: 100
-  };
-  group.layers = [leftRect, serialAndContent, combinator, pageNumber, rightRect];
-  return group;
-}
-
-function checkArtboardSort(artboardSort) {
-  if (artboardSort === 'Top to Bottom') {
-    return _Constants__WEBPACK_IMPORTED_MODULE_2__["ArtboardSortEnum"].Top2BottomByLayerList;
-  } else if (artboardSort === 'Bottom to Top') {
-    return _Constants__WEBPACK_IMPORTED_MODULE_2__["ArtboardSortEnum"].Bottom2TopByLayerList;
-  } else if (artboardSort === 'Left to Right') {
-    return _Constants__WEBPACK_IMPORTED_MODULE_2__["ArtboardSortEnum"].Left2RightByArtboard;
-  } else if (artboardSort === 'Right to Left') {
-    return _Constants__WEBPACK_IMPORTED_MODULE_2__["ArtboardSortEnum"].Right2LeftByArtboard;
-  } else if (artboardSort === 'Top to Bottom 1') {
-    return _Constants__WEBPACK_IMPORTED_MODULE_2__["ArtboardSortEnum"].Top2BottomByArtboard;
-  }
-}
-
-function checkArtboardInnerLayersSort(arboardInnerLayersSort) {
-  if (arboardInnerLayersSort === 'Top to Bottom') {
-    return _Constants__WEBPACK_IMPORTED_MODULE_2__["ArtbaordLayersSortEnum"].Top2BottomByLayerList;
-  } else if (arboardInnerLayersSort === 'Bottom to Top') {
-    return _Constants__WEBPACK_IMPORTED_MODULE_2__["ArtbaordLayersSortEnum"].Top2BottomByLayerList;
-  }
-}
-
-/* harmony default export */ __webpack_exports__["default"] = (function (artboardSort, artboardInnerLayersSort) {
-  // get layers
-  var pages = document.pages;
-  var layers = [];
-  var _iteratorNormalCompletion2 = true;
-  var _didIteratorError2 = false;
-  var _iteratorError2 = undefined;
-
-  try {
-    for (var _iterator2 = pages[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-      var page = _step2.value;
-      if (page.isSymbolsPage() || page.name === _Constants__WEBPACK_IMPORTED_MODULE_2__["TocPageName"]) continue;
-      var list = Object(_Utilities__WEBPACK_IMPORTED_MODULE_1__["getPagePosterities"])(page, checkArtboardSort(artboardSort), checkArtboardInnerLayersSort(artboardInnerLayersSort));
-      layers = layers.concat(list);
-    }
-  } catch (err) {
-    _didIteratorError2 = true;
-    _iteratorError2 = err;
-  } finally {
-    try {
-      if (!_iteratorNormalCompletion2 && _iterator2["return"] != null) {
-        _iterator2["return"]();
+    if (index === 0) {
+      if (contentsArtboards.length === 1) {
+        override.value = '2. 目录';
+      } else {
+        override.value = '2. 目录01';
       }
-    } finally {
-      if (_didIteratorError2) {
-        throw _iteratorError2;
+    } else {
+      var number = void 0;
+
+      if (index < 10) {
+        number = '0' + index;
+      } else {
+        number = index;
+      }
+
+      override.value = '2.' + index.toString() + ' 目录' + number;
+    }
+
+    contentsTitles.push(override.value);
+  } // insert contents page in TOC
+
+
+  var newHeadingMap = new Map();
+  var frontContentsPages = 0;
+  var hasAddContents = false;
+  headingsMap.forEach(function (pageNumber, headingText) {
+    if (!hasAddContents && parseInt(headingText.split('.')[0]) > 2) {
+      hasAddContents = true;
+
+      for (var _index3 = 0; _index3 < contentsTitles.length; _index3++) {
+        var title = contentsTitles[_index3];
+        newHeadingMap.set(title, frontContentsPages + _index3 + 1);
       }
     }
-  }
 
-  if (layers.length === 0) {
-    console.log('Have no layers in the document.');
+    frontContentsPages += pageNumber;
+    newHeadingMap.set(headingText, pageNumber);
+  }); // reset TOC page number
+
+  newHeadingMap.forEach(function (pageNumber, headingText) {
+    if (parseInt(headingText.split('.')[0]) > 2) {
+      newHeadingMap.set(headingText, pageNumber + contentsArtboards.length);
+    }
+  });
+  return newHeadingMap;
+}
+
+function createTableOfContents(artboardSort, contents, win) {
+  browserWindow = win;
+  webContents = contents; // get artboards
+
+  headingsMap.clear();
+  var artboards = Object(_Utilities__WEBPACK_IMPORTED_MODULE_0__["getArtboardsSorted"])(document.selectedPage, checkArtboardSort(artboardSort));
+
+  if (!checkHeadings(artboards)) {
+    console.log('check headings error');
     return;
-  } // get headings for a map(layer, pageIdx)
-
-
-  var headingsMap = new Map();
-  var pageIdx = 0;
-  layers.forEach(function (layer) {
-    if (Object(_Utilities__WEBPACK_IMPORTED_MODULE_1__["isTopLayer"])(layer)) ++pageIdx;
-    if (!layer.name.startsWith('#')) return;
-    headingsMap.set(layer, pageIdx);
-  });
+  }
 
   if (headingsMap.size === 0) {
-    console.log('Have no layers as headings.');
+    console.log('no headings');
+    UI.alert('Error', '当前文档为空，无需要生成目录');
+    webContents.executeJavaScript("showCreateTocCreate()");
     return;
-  } // check TOC page
+  } // add banner
 
 
-  var tocPage = getTocPage();
+  var pageTitleMaster = Sketch.find('SymbolMaster, [name="PageTitle"]');
+  var topBannerMaster = Sketch.find('SymbolMaster, [name="TocTopBanner"]');
+  var bottomBannerMaster = Sketch.find('SymbolMaster, [name="TocBottomBanner"]');
 
-  if (tocPage === undefined) {
-    tocPage = new Page({
-      parent: document,
-      name: _Constants__WEBPACK_IMPORTED_MODULE_2__["TocPageName"]
+  if (!pageTitleMaster.length || !topBannerMaster.length || !bottomBannerMaster.length) {
+    console.log('can not found the banner');
+    UI.alert('Error', '请添加生成目录所需要模板: PageTitle、TocTopBanner 、TocBottomBanner');
+    webContents.executeJavaScript("showCreateTocCreate()");
+    return;
+  } // add headings
+
+
+  var contentsArtboards = addHeading(document.selectedPage, headingsMap, topBannerMaster, bottomBannerMaster); // udpate contetns page in TOC
+
+  var newHeadingsMap = updateContentsPage(contentsArtboards, headingsMap); // add headings again
+
+  var newContentsArtboards = addHeading(document.selectedPage, newHeadingsMap, topBannerMaster, bottomBannerMaster);
+
+  if (contentsArtboards.length !== newContentsArtboards.length) {
+    console.log("new content artboards'size greater than the old one.");
+    newHeadingsMap = updateContentsPage(newContentsArtboards, newHeadingsMap);
+    newContentsArtboards = addHeading(document.selectedPage, newHeadingsMap, topBannerMaster, bottomBannerMaster);
+  }
+
+  if (newContentsArtboards.length > 0) {
+    document.selectedLayers.forEach(function (layer) {
+      layer.selected = false;
     });
-    pages.unshift(tocPage);
+    newContentsArtboards[0].selected = true;
   }
 
-  tocPage.layers = []; // add headings
-
-  var artboard;
-  var serial = '';
-  var idx = -1;
-  var _iteratorNormalCompletion3 = true;
-  var _didIteratorError3 = false;
-  var _iteratorError3 = undefined;
-
-  try {
-    for (var _iterator3 = headingsMap[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-      var _step3$value = _slicedToArray(_step3.value, 2),
-          layer = _step3$value[0],
-          _pageIdx = _step3$value[1];
-
-      ++idx; // create artboard
-
-      if (idx % 9 === 0) {
-        artboard = new Artboard({
-          parent: tocPage,
-          name: 'Contents ' + parseInt(idx / 9 + 1),
-          frame: {
-            x: 50,
-            y: 50 + 1050 * (idx / 9),
-            width: 1000,
-            height: 1000
-          }
-        });
-      }
-
-      var level = Object(_Utilities__WEBPACK_IMPORTED_MODULE_1__["getHeadingLevel"])(layer);
-      var serialList = serial.split('.');
-
-      if (serialList.length < level - 1) {
-        --idx;
-        console.log('Invalid heading flag.');
-        continue;
-      }
-
-      if (serialList[0] === '') {
-        serialList[0] = 1;
-      } else if (serialList.length >= level) {
-        serialList[level - 1] = parseInt(serialList[level - 1]) + 1;
-        serialList = serialList.slice(0, level);
-      } else {
-        serialList.push(1);
-      }
-
-      serial = serialList.join('.'); // create headings
-
-      var group = createHeading(artboard, serial, _pageIdx, layer);
-      group.frame.y = 50 + group.frame.height * (idx % 9);
-    }
-  } catch (err) {
-    _didIteratorError3 = true;
-    _iteratorError3 = err;
-  } finally {
-    try {
-      if (!_iteratorNormalCompletion3 && _iterator3["return"] != null) {
-        _iterator3["return"]();
-      }
-    } finally {
-      if (_didIteratorError3) {
-        throw _iteratorError3;
-      }
-    }
-  }
-
+  win.close();
   Sketch.UI.message('Create Successfully! 🙌');
-});
+}
 
 /***/ }),
 
@@ -5634,11 +5866,11 @@ function parseSymbol(json) {
     if (type === 'image') {// if (!fs.existsSync(dir + '/' + json.value))
       // 	fs.renameSync(dir + '/unzip/' + json.value, dir + '/' + json.value);
     } else if (type === 'symbolID') {// TODO: how to handle ?
-      // var layer = document.getLayerWithID(json.value)
+      // letlayer = document.getLayerWithID(json.value)
       // if (layer) {
       // 	console.log(layer.name)
       // }
-      // var symbolMaster = document.getSymbolMasterWithID(json.value)
+      // letsymbolMaster = document.getSymbolMasterWithID(json.value)
       // console.log(json.value)
       // if (symbolMaster) {
       // 	console.log(symbolMaster.name)
@@ -5920,7 +6152,6 @@ var theUI = function theUI(options) {
     show: false
   };
   var artboardSort = '';
-  var artboardInnerLayersSort = '';
   var win = new sketch_module_web_view__WEBPACK_IMPORTED_MODULE_0___default.a(winOptions);
   var contents = win.webContents;
   win.once('ready-to-show', function () {
@@ -5946,8 +6177,11 @@ var theUI = function theUI(options) {
   });
   win.loadURL(__webpack_require__(/*! ../../resources/webview.html */ "./resources/webview.html"));
   contents.on('createTableOfContent', function () {
-    Object(_lib_CreateTableOfContents__WEBPACK_IMPORTED_MODULE_1__["default"])(artboardSort, artboardInnerLayersSort);
-    win.close();
+    Object(_lib_CreateTableOfContents__WEBPACK_IMPORTED_MODULE_1__["createTableOfContents"])(artboardSort, contents, win);
+  });
+  contents.on('createContinue', function (value) {
+    Object(_lib_CreateTableOfContents__WEBPACK_IMPORTED_MODULE_1__["setParentHeadingOrOverrideValue"])(value);
+    Object(_lib_CreateTableOfContents__WEBPACK_IMPORTED_MODULE_1__["createTableOfContents"])(artboardSort, contents, win);
   });
   contents.on('exportMetadata', function (path) {
     handingTask = true;
@@ -6003,15 +6237,13 @@ var theUI = function theUI(options) {
 /*!******************************!*\
   !*** ./src/lib/Utilities.js ***!
   \******************************/
-/*! exports provided: getPagePosterities, getHeadingLevel, getHeading, isTopLayer, getDefaultExportDir, getExportDir */
+/*! exports provided: getArtboardsSorted, getPagePosterities, getDefaultExportDir, getExportDir */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getArtboardsSorted", function() { return getArtboardsSorted; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getPagePosterities", function() { return getPagePosterities; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getHeadingLevel", function() { return getHeadingLevel; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getHeading", function() { return getHeading; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "isTopLayer", function() { return isTopLayer; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getDefaultExportDir", function() { return getDefaultExportDir; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getExportDir", function() { return getExportDir; });
 /* harmony import */ var _Constants__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Constants */ "./src/lib/Constants.js");
@@ -6160,25 +6392,6 @@ function getPagePosterities(page) {
 
   return posterities;
 }
-function getHeadingLevel(layer) {
-  var flag = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '#';
-  var name = layer.name;
-  var title = '';
-
-  for (var j = 0; j < name.length; ++j) {
-    if (name.charAt(j) !== flag) break;
-    title += '#';
-  }
-
-  return title.length;
-}
-function getHeading(layer) {
-  var name = layer.name;
-  return name.slice(getHeadingLevel(layer));
-}
-function isTopLayer(layer) {
-  return layer.parent.type === 'Page';
-}
 function getDefaultExportDir() {
   var dir = os.homedir() + '/Desktop';
   return dir;
@@ -6242,6 +6455,28 @@ module.exports = require("sketch");
 /***/ (function(module, exports) {
 
 module.exports = require("sketch/dom");
+
+/***/ }),
+
+/***/ "sketch/settings":
+/*!**********************************!*\
+  !*** external "sketch/settings" ***!
+  \**********************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = require("sketch/settings");
+
+/***/ }),
+
+/***/ "sketch/ui":
+/*!****************************!*\
+  !*** external "sketch/ui" ***!
+  \****************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = require("sketch/ui");
 
 /***/ }),
 

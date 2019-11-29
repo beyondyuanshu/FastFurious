@@ -153,11 +153,11 @@ function parseSymbol(json) {
 			// 	fs.renameSync(dir + '/unzip/' + json.value, dir + '/' + json.value);
 		} else if (type === 'symbolID') {
 			// TODO: how to handle ?
-			// var layer = document.getLayerWithID(json.value)
+			// letlayer = document.getLayerWithID(json.value)
 			// if (layer) {
 			// 	console.log(layer.name)
 			// }
-			// var symbolMaster = document.getSymbolMasterWithID(json.value)
+			// letsymbolMaster = document.getSymbolMasterWithID(json.value)
 			// console.log(json.value)
 			// if (symbolMaster) {
 			// 	console.log(symbolMaster.name)

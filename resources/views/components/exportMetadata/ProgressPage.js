@@ -35,7 +35,7 @@ export default function LinearDeterminate() {
 
 	return (
 		<div className={classes.root}>
-			<Grid container alignItems="center" spacing="3" style={{ display: 'flex' }}>
+			<Grid container alignItems="center" spacing={3} style={{ display: 'flex' }}>
 				<Grid item style={{ flexGrow: 1, marginLeft: 10 }}>
 					<LinearProgress
 						variant={progerssVariant}

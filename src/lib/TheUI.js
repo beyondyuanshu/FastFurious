@@ -1,5 +1,5 @@
 import BrowserWindow from 'sketch-module-web-view';
-import CreateTableOfContents from '../lib/CreateTableOfContents';
+import { createTableOfContents, setParentHeadingOrOverrideValue } from '../lib/CreateTableOfContents';
 import { exportMetadata, cancelTask, getTargetLayers } from '../lib/ExportMetadata';
 import getTheme from '../../resources/views/theme/index';
 import { getDefaultExportDir, getExportDir } from './Utilities';
@@ -26,7 +26,6 @@ const theUI = options => {
 	};
 
 	let artboardSort = '';
-	let artboardInnerLayersSort = '';
 
 	let win = new BrowserWindow(winOptions);
 	const contents = win.webContents;
@@ -56,8 +55,12 @@ const theUI = options => {
 	win.loadURL(require('../../resources/webview.html'));
 
 	contents.on('createTableOfContent', () => {
-		CreateTableOfContents(artboardSort, artboardInnerLayersSort);
-		win.close();
+		createTableOfContents(artboardSort, contents, win);
+	});
+
+	contents.on('createContinue', value => {
+		setParentHeadingOrOverrideValue(value);
+		createTableOfContents(artboardSort, contents, win);
 	});
 
 	contents.on('exportMetadata', path => {
