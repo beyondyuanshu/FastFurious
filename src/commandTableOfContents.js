@@ -20,7 +20,7 @@ export default function() {
 
 	const options = {
 		identifier: 'createTableOfContent.ui',
-		title: '目录生成',
+		title: '生成目录',
 		redirectTo: '/create_toc',
 		width: 600,
 		height: 310,

@@ -43,7 +43,7 @@
 		"eslint-plugin-jsx-a11y": "^6.2.1",
 		"eslint-plugin-prettier": "^2.7.0",
 		"eslint-plugin-react": "^7.12.4",
-		"html-loader": "^0.5.1",
+		"html-loader": "^0.5.5",
 		"prettier": "^1.9.2",
 		"svg-react-loader": "^0.4.6"
 	},
@@ -64,6 +64,7 @@
 		"@skpm/timers": "^0.2.1",
 		"async-json-parser": "0.0.5",
 		"bfj": "^7.0.1",
+		"material-ui-image": "^3.2.2",
 		"mixpanel-browser": "^2.30.1",
 		"moment": "^2.24.0",
 		"react": "^16.9.0",

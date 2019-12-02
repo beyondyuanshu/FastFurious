@@ -51000,7 +51000,7 @@ function HintPage(props) {
     onClick: function onClick() {
       return handleCancel();
     }
-  }, "Cancel")), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_material_ui_core_Grid__WEBPACK_IMPORTED_MODULE_5__["default"], {
+  }, "\u53D6\u6D88")), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_material_ui_core_Grid__WEBPACK_IMPORTED_MODULE_5__["default"], {
     item: true
   }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_material_ui_core_Button__WEBPACK_IMPORTED_MODULE_6__["default"], {
     className: classes.button,
@@ -51010,7 +51010,7 @@ function HintPage(props) {
     onClick: function onClick() {
       return handleContinue();
     }
-  }, "Continue")))));
+  }, "\u7EE7\u7EED")))));
 }
 
 /***/ })

@@ -5345,8 +5345,6 @@ function createHeading(artboard, originalX, originalY, headingLevel, headingText
 }
 
 function setParentHeadingOrOverrideValue(value) {
-  console.log(value, invalidHeadingOverride);
-
   if (invalidHeadingOverride) {
     invalidHeadingOverride.value = value;
     invalidHeadingOverride = undefined;
@@ -5395,7 +5393,7 @@ function checkHeadingSerial(lastSerial, currentSerial) {
     }
   }
 
-  return hasError;
+  return !hasError;
 }
 
 function checkHeadings(artboards) {
@@ -5418,7 +5416,15 @@ function checkHeadings(artboards) {
       if (layer.type === 'SymbolInstance' && layer.master.name === 'PageTitle') {
         // 遍历标题所有层，找出标题内容
         for (var _index2 = 0; _index2 < layer.overrides.length; _index2++) {
-          var override = layer.overrides[_index2];
+          var override = layer.overrides[_index2]; // 检查是否有重复
+
+          if (headingsMap.has(override.value)) {
+            // 标题格式不正确，提示用户修正
+            console.log('have the same heading:', override.value);
+            invalidHeadingOverride = override;
+            webContents.executeJavaScript("showCreateTocHint('\u6807\u9898\u6709\u91CD\u590D', ".concat(JSON.stringify(override.value), ")"));
+            return false;
+          }
 
           if (override.affectedLayer.name === 'title') {
             // 匹配六级标题：（1.）（1.1）（1.1.1）...
@@ -5429,7 +5435,7 @@ function checkHeadings(artboards) {
               // 标题格式不正确，提示用户修正
               console.log('invalid format heading:', override.value);
               invalidHeadingOverride = override;
-              webContents.executeJavaScript("showCreateTocHint('\u65E0\u6548\u7684\u6807\u9898\uFF0C\u6B63\u786E\u683C\u5F0F\u793A\u4F8B\uFF1A\u30101. XXX\u3011 \u6216\u8005 \u30101.1 XXX\u3011', ".concat(JSON.stringify(override.value), ")"));
+              webContents.executeJavaScript("showCreateTocHint('\u65E0\u6548\u7684\u6807\u9898\uFF0C\u6B63\u786E\u683C\u5F0F\u793A\u4F8B:\u30101. XXX\u3011 \u6216\u8005 \u30101.1 XXX\u3011', ".concat(JSON.stringify(override.value), ")"));
               return false;
             } else {
               // 标题格式正确，判断是否需要提示指定父级标题
@@ -5437,8 +5443,9 @@ function checkHeadings(artboards) {
 
               if (currentSerial.endsWith('1') && !currentSerial.startsWith(lastSerial)) {
                 var parentHeading = Settings.layerSettingForKey(artboard, 'parentHeading');
+                console.log(currentSerial, parentHeading);
 
-                if (!parentHeading || !parentHeading.startsWith(currentSerial.slice(0, -2))) {
+                if (!parentHeading) {
                   console.log('should add parent heading for this layer:', artboard.name);
                   document.selectedLayers.forEach(function (layer) {
                     layer.selected = false;
@@ -5447,30 +5454,30 @@ function checkHeadings(artboards) {
                   artboard.selected = true;
                   document.centerOnLayer(artboard);
                   noParentHeadingArtboard = artboard;
-                  webContents.executeJavaScript("showCreateTocHint('Should add a parent heading for this layer!', '')");
+                  webContents.executeJavaScript("showCreateTocHint('\u9700\u8981\u6DFB\u52A0\u5F53\u524D\u6807\u9898\u7684\u7236\u6807\u9898\uFF0C\u5F53\u524D\u6807\u9898\u4E3A:' + ".concat(JSON.stringify(override.value), ")"));
                   return false;
-                } else {
+                } else if (!parentHeading.startsWith(currentSerial.slice(0, -2))) {
                   var serial = parentHeading.split(' ')[0];
 
-                  if (checkHeadingSerial(lastSerial, serial)) {
+                  if (!checkHeadingSerial(lastSerial, serial) || currentSerial !== serial + '.1') {
                     document.selectedLayers.forEach(function (layer) {
                       layer.selected = false;
                     });
                     artboard.parent.selected = true;
                     artboard.selected = true;
                     document.centerOnLayer(artboard);
-                    invalidHeadingOverride = override;
-                    webContents.executeJavaScript("showCreateTocHint('\u7236\u7EA7\u6807\u9898\u5E8F\u53F7\u4E0D\u6B63\u786E\uFF0C\u8BF7\u66F4\u6B63\u3002\u4E0A\u4E00\u6807\u9898\u5E8F\u53F7\u4E3A\uFF1A' + ".concat(JSON.stringify(lastSerial), ", ").concat(JSON.stringify(parentHeading), ")"));
+                    noParentHeadingArtboard = artboard;
+                    webContents.executeJavaScript("showCreateTocHint('\u7236\u7EA7\u6807\u9898\u5E8F\u53F7\u4E0D\u6B63\u786E\uFF0C\u8BF7\u66F4\u6B63\u3002\u4E0A\u4E00\u6807\u9898\u5E8F\u53F7\u4E3A:' + ".concat(JSON.stringify(lastSerial), ", ").concat(JSON.stringify(parentHeading), ")"));
                     return false;
                   }
-
+                } else {
                   lastSerial = parentHeading.split(' ')[0];
                   headingsMap.set(parentHeading, artboardIndex);
                 }
               } // 检查标题序号
 
 
-              if (checkHeadingSerial(lastSerial, currentSerial)) {
+              if (!checkHeadingSerial(lastSerial, currentSerial)) {
                 document.selectedLayers.forEach(function (layer) {
                   layer.selected = false;
                 });
@@ -5478,7 +5485,7 @@ function checkHeadings(artboards) {
                 artboard.selected = true;
                 document.centerOnLayer(artboard);
                 invalidHeadingOverride = override;
-                webContents.executeJavaScript("showCreateTocHint('\u6807\u9898\u5E8F\u53F7\u4E0D\u6B63\u786E\uFF0C\u8BF7\u66F4\u6B63\u3002\u4E0A\u4E00\u6807\u9898\u5E8F\u53F7\u4E3A\uFF1A' + ".concat(JSON.stringify(lastSerial), ", ").concat(JSON.stringify(override.value), ")"));
+                webContents.executeJavaScript("showCreateTocHint('\u5F53\u524D\u6807\u9898\u5E8F\u53F7\u4E0D\u6B63\u786E\uFF0C\u8BF7\u66F4\u6B63\u3002\u4E0A\u4E00\u6807\u9898\u5E8F\u53F7\u4E3A:' + ".concat(JSON.stringify(lastSerial), ", ").concat(JSON.stringify(override.value), ")"));
                 return false;
               }
 
@@ -5607,12 +5614,13 @@ function updateContentsPage(contentsArtboards, headingsMap) {
   for (var index = 0; index < contentsArtboards.length; index++) {
     var artboard = contentsArtboards[index];
     var override = artboard.layers[0].overrides[1];
+    var value = void 0;
 
     if (index === 0) {
       if (contentsArtboards.length === 1) {
-        override.value = '2. 目录';
+        value = '2. 目录';
       } else {
-        override.value = '2. 目录01';
+        value = '2. 目录01';
       }
     } else {
       var number = void 0;
@@ -5623,10 +5631,12 @@ function updateContentsPage(contentsArtboards, headingsMap) {
         number = index;
       }
 
-      override.value = '2.' + index.toString() + ' 目录' + number;
+      value = '2.' + index.toString() + ' 目录' + number;
     }
 
-    contentsTitles.push(override.value);
+    override.value = value; // Fix: 改完不会立马生效？
+
+    contentsTitles.push(value);
   } // insert contents page in TOC
 
 
@@ -5657,23 +5667,7 @@ function updateContentsPage(contentsArtboards, headingsMap) {
 
 function createTableOfContents(artboardSort, contents, win) {
   browserWindow = win;
-  webContents = contents; // get artboards
-
-  headingsMap.clear();
-  var artboards = Object(_Utilities__WEBPACK_IMPORTED_MODULE_0__["getArtboardsSorted"])(document.selectedPage, checkArtboardSort(artboardSort));
-
-  if (!checkHeadings(artboards)) {
-    console.log('check headings error');
-    return;
-  }
-
-  if (headingsMap.size === 0) {
-    console.log('no headings');
-    UI.alert('Error', '当前文档为空，无需要生成目录');
-    webContents.executeJavaScript("showCreateTocCreate()");
-    return;
-  } // add banner
-
+  webContents = contents; // add banner
 
   var pageTitleMaster = Sketch.find('SymbolMaster, [name="PageTitle"]');
   var topBannerMaster = Sketch.find('SymbolMaster, [name="TocTopBanner"]');
@@ -5684,19 +5678,42 @@ function createTableOfContents(artboardSort, contents, win) {
     UI.alert('Error', '请添加生成目录所需要模板: PageTitle、TocTopBanner 、TocBottomBanner');
     webContents.executeJavaScript("showCreateTocCreate()");
     return;
+  } // get artboards
+
+
+  headingsMap.clear();
+  var artboards = Object(_Utilities__WEBPACK_IMPORTED_MODULE_0__["getArtboardsSorted"])(document.selectedPage, checkArtboardSort(artboardSort));
+
+  if (artboards.length === 0) {
+    console.log('no artboards');
+    UI.alert('Error', '当前文档为空，无需要生成目录');
+    webContents.executeJavaScript("showCreateTocCreate()");
+    return;
+  }
+
+  if (!checkHeadings(artboards)) {
+    console.log('check headings error');
+    return;
+  }
+
+  if (headingsMap.size === 0) {
+    console.log('no headings');
+    UI.alert('Error', '找不到目录页，请检查标题设置是否正确');
+    webContents.executeJavaScript("showCreateTocCreate()");
+    return;
   } // add headings
 
 
-  var contentsArtboards = addHeading(document.selectedPage, headingsMap, topBannerMaster, bottomBannerMaster); // udpate contetns page in TOC
-
+  var contentsArtboards = addHeading(document.selectedPage, headingsMap, topBannerMaster, bottomBannerMaster);
   var newHeadingsMap = updateContentsPage(contentsArtboards, headingsMap); // add headings again
 
   var newContentsArtboards = addHeading(document.selectedPage, newHeadingsMap, topBannerMaster, bottomBannerMaster);
+  newHeadingsMap = updateContentsPage(newContentsArtboards, newHeadingsMap);
 
   if (contentsArtboards.length !== newContentsArtboards.length) {
     console.log("new content artboards'size greater than the old one.");
-    newHeadingsMap = updateContentsPage(newContentsArtboards, newHeadingsMap);
     newContentsArtboards = addHeading(document.selectedPage, newHeadingsMap, topBannerMaster, bottomBannerMaster);
+    newHeadingsMap = updateContentsPage(newContentsArtboards, newHeadingsMap);
   }
 
   if (newContentsArtboards.length > 0) {
@@ -5704,6 +5721,7 @@ function createTableOfContents(artboardSort, contents, win) {
       layer.selected = false;
     });
     newContentsArtboards[0].selected = true;
+    document.centerOnLayer(newContentsArtboards[0]);
   }
 
   win.close();
@@ -6259,14 +6277,17 @@ function hasLayers(layer) {
 
 function getArtboardsSorted(page) {
   var sort = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _Constants__WEBPACK_IMPORTED_MODULE_0__["ArtboardSortEnum"].Left2RightByArtboard;
-  var layers = page.layers.slice();
+  var artboards = [];
+  page.layers.slice().forEach(function (layer) {
+    if (layer.type === 'Artboard') artboards.push(layer);
+  });
 
   if (sort === _Constants__WEBPACK_IMPORTED_MODULE_0__["ArtboardSortEnum"].Top2BottomByLayerList) {
-    return layers.reverse();
+    return artboards.reverse();
   } else if (sort === _Constants__WEBPACK_IMPORTED_MODULE_0__["ArtboardSortEnum"].Bottom2TopByLayerList) {
-    return layers;
+    return artboards;
   } else if (sort === _Constants__WEBPACK_IMPORTED_MODULE_0__["ArtboardSortEnum"].Left2RightByArtboard) {
-    return layers.sort(function (a, b) {
+    return artboards.sort(function (a, b) {
       if (a.frame.y < b.frame.y) {
         return -1;
       } else if (a.frame.y > b.frame.y) {
@@ -6282,7 +6303,7 @@ function getArtboardsSorted(page) {
       return 0;
     });
   } else if (sort === _Constants__WEBPACK_IMPORTED_MODULE_0__["ArtboardSortEnum"].Right2LeftByArtboard) {
-    return layers.sort(function (a, b) {
+    return artboards.sort(function (a, b) {
       if (a.frame.y < b.frame.y) {
         return -1;
       } else if (a.frame.y > b.frame.y) {
@@ -6298,7 +6319,7 @@ function getArtboardsSorted(page) {
       return 0;
     });
   } else if (sort === _Constants__WEBPACK_IMPORTED_MODULE_0__["ArtboardSortEnum"].Top2BottomByArtboard) {
-    return layers.sort(function (a, b) {
+    return artboards.sort(function (a, b) {
       if (a.frame.x < b.frame.x) {
         return -1;
       } else if (a.frame.x > b.frame.x) {

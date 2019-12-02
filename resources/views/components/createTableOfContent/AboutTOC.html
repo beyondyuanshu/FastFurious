@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+<head>
+<meta charset='UTF-8'><meta name='viewport' content='width=device-width initial-scale=1'>
+<title>”Sketch 生成目录插件“使用说明</title></head>
+<body><h1>”Sketch 生成目录插件“使用说明</h1>
+<h2>概述</h2>
+<ul>
+<li>所生成的目录页包含 3 部分内容：TopBanner、Content、BottomBanner</li>
+<li>本插件检测画板中的 PageTitle 模板，找到标题，依次写入目录页</li>
+<li>生成过程将检测标题的有效性、标题序号的正确性、标题是否有重复等，并提供修正的界面</li>
+
+</ul>
+<h2>依赖</h2>
+<ul>
+<li>本插件依赖 3 个模板：PageTitle、TopBanner、BottomBanner（从 UE 模板库中下载到当前 Sketch 文档，在需要加入目录的画板中使用 PageTitle 模板设置标题）</li>
+
+</ul>
+<h2>操作</h2>
+<ol start='' >
+<li>安装 Fast-Furious.sketchplugin 插件</li>
+<li>选择插件中 ”生成目录“ 项</li>
+<li>指定画板排列的顺序，该顺序决定标题在目录中的页码</li>
+<li><u><em>检测到不符合规则的标题，将提示修正</em></u></li>
+<li>点击 ”生成“，等待完成</li>
+<li>生成的目录页在 {x: 0, y: 0} 位置，并自动在 Sketch 文档中居中显示，可查看确认</li>
+
+</ol>
+<h2>注意</h2>
+<ul>
+<li>本插件参考《交互设计文档规范 1.0.1》提供的标题规则</li>
+<li>本插件依赖的模板有更新，请联系作者</li>
+
+</ul>
+</body>
+</html>

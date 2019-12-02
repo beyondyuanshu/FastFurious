@@ -25,4 +25,12 @@ module.exports = function(config, isPluginCommand) {
 			},
 		],
 	});
+	config.module.rules.push({
+		test: /\.(jpeg|png)$/,
+		use: [
+			{
+				loader: 'file-loader',
+			},
+		],
+	});
 };

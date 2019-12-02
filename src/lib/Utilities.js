@@ -8,13 +8,17 @@ function hasLayers(layer) {
 }
 
 export function getArtboardsSorted(page, sort = ArtboardSortEnum.Left2RightByArtboard) {
-	let layers = page.layers.slice();
+	let artboards = [];
+	page.layers.slice().forEach(layer => {
+		if (layer.type === 'Artboard') artboards.push(layer);
+	});
+
 	if (sort === ArtboardSortEnum.Top2BottomByLayerList) {
-		return layers.reverse();
+		return artboards.reverse();
 	} else if (sort === ArtboardSortEnum.Bottom2TopByLayerList) {
-		return layers;
+		return artboards;
 	} else if (sort === ArtboardSortEnum.Left2RightByArtboard) {
-		return layers.sort(function(a, b) {
+		return artboards.sort(function(a, b) {
 			if (a.frame.y < b.frame.y) {
 				return -1;
 			} else if (a.frame.y > b.frame.y) {
@@ -28,7 +32,7 @@ export function getArtboardsSorted(page, sort = ArtboardSortEnum.Left2RightByArt
 			return 0;
 		});
 	} else if (sort === ArtboardSortEnum.Right2LeftByArtboard) {
-		return layers.sort(function(a, b) {
+		return artboards.sort(function(a, b) {
 			if (a.frame.y < b.frame.y) {
 				return -1;
 			} else if (a.frame.y > b.frame.y) {
@@ -42,7 +46,7 @@ export function getArtboardsSorted(page, sort = ArtboardSortEnum.Left2RightByArt
 			return 0;
 		});
 	} else if (sort === ArtboardSortEnum.Top2BottomByArtboard) {
-		return layers.sort(function(a, b) {
+		return artboards.sort(function(a, b) {
 			if (a.frame.x < b.frame.x) {
 				return -1;
 			} else if (a.frame.x > b.frame.x) {

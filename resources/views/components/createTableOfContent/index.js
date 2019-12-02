@@ -9,6 +9,8 @@ import Grid from '@material-ui/core/Grid';
 import Button from '@material-ui/core/Button';
 import ProgressPage from './ProgressPage';
 import HintPage from './HintPage';
+// import AboutTOC from './AboutTOC.html';
+// import Image from 'material-ui-image';
 
 const useStyles = makeStyles(theme => ({
 	root: {
@@ -90,13 +92,18 @@ function CreateTableOfContent() {
 	return (
 		<div className={classes.root}>
 			<CssBaseline />
+
+			{/* <Image src={'http://loremflickr.com/300/200'} />
+			 */}
+			{/* <div dangerouslySetInnerHTML={ {__html: AboutTOC} } /> */}
+
 			{state.creating && !state.hinting && <ProgressPage />}
 			{!state.creating && !state.hinting && (
 				<Container className={classes.container} margin="500px" maxWidth="sm">
 					<Grid container spacing={2} alignItems="center" justify="center">
 						<Grid item>
 							<Typography variant="subtitle1" color="textPrimary" align="right">
-								选择画板顺序：
+								选择画板顺序:
 							</Typography>
 						</Grid>
 						<Grid item>

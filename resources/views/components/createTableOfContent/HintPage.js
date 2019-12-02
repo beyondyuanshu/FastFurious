@@ -87,7 +87,7 @@ export default function HintPage(props) {
 				<Grid container spacing={2} alignItems="flex-end" justify="center">
 					<Grid item>
 						<Button className={classes.button} variant="outlined" onClick={() => handleCancel()}>
-							Cancel
+							取消
 						</Button>
 					</Grid>
 					<Grid item>
@@ -98,7 +98,7 @@ export default function HintPage(props) {
 							disabled={!state.enableContinue}
 							onClick={() => handleContinue()}
 						>
-							Continue
+							继续
 						</Button>
 					</Grid>
 				</Grid>

@@ -78655,7 +78655,7 @@ function HintPage(props) {
     onClick: function onClick() {
       return handleCancel();
     }
-  }, "Cancel")), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_material_ui_core_Grid__WEBPACK_IMPORTED_MODULE_5__["default"], {
+  }, "\u53D6\u6D88")), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_material_ui_core_Grid__WEBPACK_IMPORTED_MODULE_5__["default"], {
     item: true
   }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_material_ui_core_Button__WEBPACK_IMPORTED_MODULE_6__["default"], {
     className: classes.button,
@@ -78665,7 +78665,7 @@ function HintPage(props) {
     onClick: function onClick() {
       return handleContinue();
     }
-  }, "Continue")))));
+  }, "\u7EE7\u7EED")))));
 }
 
 /***/ }),
@@ -78804,6 +78804,8 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 
 
 
+ // import AboutTOC from './AboutTOC.html';
+// import Image from 'material-ui-image';
 
 var useStyles = Object(_material_ui_core_styles__WEBPACK_IMPORTED_MODULE_1__["makeStyles"])(function (theme) {
   return {
@@ -78898,7 +78900,7 @@ function CreateTableOfContent() {
     variant: "subtitle1",
     color: "textPrimary",
     align: "right"
-  }, "\u9009\u62E9\u753B\u677F\u987A\u5E8F\uFF1A")), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_material_ui_core_Grid__WEBPACK_IMPORTED_MODULE_7__["default"], {
+  }, "\u9009\u62E9\u753B\u677F\u987A\u5E8F:")), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_material_ui_core_Grid__WEBPACK_IMPORTED_MODULE_7__["default"], {
     item: true
   }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_material_ui_core_FormControl__WEBPACK_IMPORTED_MODULE_2__["default"], {
     className: classes.formControl
