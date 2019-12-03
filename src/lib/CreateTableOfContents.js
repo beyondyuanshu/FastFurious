@@ -234,14 +234,23 @@ function checkHeadingSerial(lastSerial, currentSerial) {
 	return !hasError;
 }
 
-function checkHeadings(artboards) {
+function focusArtboard(artboard) {
+	document.selectedLayers.forEach(layer => {
+		layer.selected = false;
+	});
+	artboard.parent.selected = true;
+	artboard.selected = true;
+	document.centerOnLayer(artboard);
+}
+
+function checkHeadings(artboards, pageTitleMaster) {
+	// 遍历所有画板，找出所有标题
 	let artboardIndex = 0;
 	let lastSerial = '';
-
-	// 遍历所有画板，找出所有标题
 	for (let index = 0; index < artboards.length; index++) {
 		++artboardIndex;
 
+		// 过滤掉目录页
 		const artboard = artboards[index];
 		let type = Settings.layerSettingForKey(artboard, 'layerType');
 		if (type === 'TOC') {
@@ -251,109 +260,101 @@ function checkHeadings(artboards) {
 		// 遍历画板所有层，找出标题层
 		for (let index = 0; index < artboard.layers.length; index++) {
 			const layer = artboard.layers[index];
+
+			// 替换 Title 组件实例为 PageTitle 组件
+			if (
+				layer.type === 'SymbolInstance' &&
+				layer.master.name === 'Title' &&
+				(layer.frame.x === 0 && layer.frame.y === 0)
+			) {
+				let pageTitle = pageTitleMaster[0].createNewInstance();
+				pageTitle.parent = artboard;
+				pageTitle.overrides[1].value = layer.overrides[0].value;
+				layer.remove();
+			}
+
+			// 处理 PageTitle
 			if (layer.type === 'SymbolInstance' && layer.master.name === 'PageTitle') {
-				// 遍历标题所有层，找出标题内容
-				for (let index = 0; index < layer.overrides.length; index++) {
-					const override = layer.overrides[index];
+				const override = layer.overrides[1];
 
-					// 检查是否有重复
-					if (headingsMap.has(override.value)) {
-						// 标题格式不正确，提示用户修正
-						console.log('have the same heading:', override.value);
-						invalidHeadingOverride = override;
-						webContents.executeJavaScript(
-							`showCreateTocHint('标题有重复', ${JSON.stringify(override.value)})`
-						);
-						return false;
-					}
+				// 检查是否有重复
+				if (headingsMap.has(override.value)) {
+					// 标题有重复，提示用户修正
+					console.log('same heading:', override.value);
+					focusArtboard(artboard);
+					invalidHeadingOverride = override;
+					webContents.executeJavaScript(`showCreateTocHint('标题有重复', ${JSON.stringify(override.value)})`);
 
-					if (override.affectedLayer.name === 'title') {
-						// 匹配六级标题：（1.）（1.1）（1.1.1）...
-						let pattern = /(^[1-9][0-9]{0,}\. )|(^[1-9][0-9]{0,}((\.[1-9][0-9]{0,}){1,5}) )/;
-						let regex = new RegExp(pattern);
-						if (override.value.length && !regex.test(override.value)) {
-							// 标题格式不正确，提示用户修正
-							console.log('invalid format heading:', override.value);
-							invalidHeadingOverride = override;
+					return false;
+				}
+
+				// 匹配六级标题：（1.）（1.1）（1.1.1）...
+				let pattern = /(^[1-9][0-9]{0,}\. )|(^[1-9][0-9]{0,}((\.[1-9][0-9]{0,}){1,5}) )/;
+				let regex = new RegExp(pattern);
+				if (override.value.length && !regex.test(override.value)) {
+					// 标题格式不正确，提示用户修正
+					console.log('invalid format heading:', override.value);
+					focusArtboard(artboard);
+					invalidHeadingOverride = override;
+					webContents.executeJavaScript(
+						`showCreateTocHint('无效的标题，正确格式示例:【1. XXX】 或者 【1.1 XXX】', ${JSON.stringify(
+							override.value
+						)})`
+					);
+
+					return false;
+				} else {
+					// 标题格式正确，判断是否需要提示指定父级标题
+					let currentSerial = override.value.split(' ')[0];
+					if (currentSerial.endsWith('1') && !currentSerial.startsWith(lastSerial)) {
+						let parentHeading = Settings.layerSettingForKey(artboard, 'parentHeading');
+						if (!parentHeading) {
+							console.log('should add parent heading:', artboard.name);
+							focusArtboard(artboard);
+							noParentHeadingArtboard = artboard;
 							webContents.executeJavaScript(
-								`showCreateTocHint('无效的标题，正确格式示例:【1. XXX】 或者 【1.1 XXX】', ${JSON.stringify(
+								`showCreateTocHint('需要添加当前标题的父标题，当前标题为:' + ${JSON.stringify(
 									override.value
 								)})`
 							);
+
 							return false;
-						} else {
-							// 标题格式正确，判断是否需要提示指定父级标题
-							let currentSerial = override.value.split(' ')[0];
-							if (currentSerial.endsWith('1') && !currentSerial.startsWith(lastSerial)) {
-								let parentHeading = Settings.layerSettingForKey(artboard, 'parentHeading');
-								console.log(currentSerial, parentHeading);
-								if (!parentHeading) {
-									console.log('should add parent heading for this layer:', artboard.name);
-									document.selectedLayers.forEach(layer => {
-										layer.selected = false;
-									});
-									artboard.parent.selected = true;
-									artboard.selected = true;
-									document.centerOnLayer(artboard);
-
-									noParentHeadingArtboard = artboard;
-									webContents.executeJavaScript(
-										`showCreateTocHint('需要添加当前标题的父标题，当前标题为:' + ${JSON.stringify(
-											override.value
-										)})`
-									);
-
-									return false;
-								} else if (!parentHeading.startsWith(currentSerial.slice(0, -2))) {
-									let serial = parentHeading.split(' ')[0];
-									if (!checkHeadingSerial(lastSerial, serial) || currentSerial !== serial + '.1') {
-										document.selectedLayers.forEach(layer => {
-											layer.selected = false;
-										});
-										artboard.parent.selected = true;
-										artboard.selected = true;
-										document.centerOnLayer(artboard);
-
-										noParentHeadingArtboard = artboard;
-										webContents.executeJavaScript(
-											`showCreateTocHint('父级标题序号不正确，请更正。上一标题序号为:' + ${JSON.stringify(
-												lastSerial
-											)}, ${JSON.stringify(parentHeading)})`
-										);
-
-										return false;
-									}
-								} else {
-									lastSerial = parentHeading.split(' ')[0];
-									headingsMap.set(parentHeading, artboardIndex);
-								}
-							}
-
-							// 检查标题序号
-							if (!checkHeadingSerial(lastSerial, currentSerial)) {
-								document.selectedLayers.forEach(layer => {
-									layer.selected = false;
-								});
-								artboard.parent.selected = true;
-								artboard.selected = true;
-								document.centerOnLayer(artboard);
-
-								invalidHeadingOverride = override;
+						} else if (!parentHeading.startsWith(currentSerial.slice(0, -2))) {
+							let serial = parentHeading.split(' ')[0];
+							if (!checkHeadingSerial(lastSerial, serial) || currentSerial !== serial + '.1') {
+								console.log('invalid sort parent heading:', artboard.name);
+								focusArtboard(artboard);
+								noParentHeadingArtboard = artboard;
 								webContents.executeJavaScript(
-									`showCreateTocHint('当前标题序号不正确，请更正。上一标题序号为:' + ${JSON.stringify(
+									`showCreateTocHint('父级标题序号不正确，请更正。上一标题序号为:' + ${JSON.stringify(
 										lastSerial
-									)}, ${JSON.stringify(override.value)})`
+									)}, ${JSON.stringify(parentHeading)})`
 								);
 
 								return false;
 							}
-
-							headingsMap.set(override.value, artboardIndex);
-							lastSerial = currentSerial;
+						} else {
+							lastSerial = parentHeading.split(' ')[0];
+							headingsMap.set(parentHeading, artboardIndex);
 						}
-
-						break;
 					}
+
+					// 检查标题序号
+					if (!checkHeadingSerial(lastSerial, currentSerial)) {
+						console.log('invalid sort heading:', override.value);
+						focusArtboard();
+						invalidHeadingOverride = override;
+						webContents.executeJavaScript(
+							`showCreateTocHint('当前标题序号不正确，请更正。上一标题序号为:' + ${JSON.stringify(
+								lastSerial
+							)}, ${JSON.stringify(override.value)})`
+						);
+
+						return false;
+					}
+
+					headingsMap.set(override.value, artboardIndex);
+					lastSerial = currentSerial;
 				}
 
 				break;
@@ -448,7 +449,6 @@ function updateContentsPage(contentsArtboards, headingsMap) {
 	let contentsTitles = [];
 	for (let index = 0; index < contentsArtboards.length; index++) {
 		const artboard = contentsArtboards[index];
-		let override = artboard.layers[0].overrides[1];
 		let value;
 		if (index === 0) {
 			if (contentsArtboards.length === 1) {
@@ -465,7 +465,8 @@ function updateContentsPage(contentsArtboards, headingsMap) {
 			}
 			value = '2.' + index.toString() + ' 目录' + number;
 		}
-		override.value = value; // Fix: 改完不会立马生效？
+		artboard.layers[0].overrides[2].value = value;
+		artboard.layers[0].overrides[1].value = index + 3; // 约定从第 3 页开始
 		contentsTitles.push(value);
 	}
 
@@ -500,7 +501,7 @@ export function createTableOfContents(artboardSort, contents, win) {
 	browserWindow = win;
 	webContents = contents;
 
-	// add banner
+	// 检测依赖的组件是否存在
 	let pageTitleMaster = Sketch.find('SymbolMaster, [name="PageTitle"]');
 	let topBannerMaster = Sketch.find('SymbolMaster, [name="TocTopBanner"]');
 	let bottomBannerMaster = Sketch.find('SymbolMaster, [name="TocBottomBanner"]');
@@ -511,8 +512,7 @@ export function createTableOfContents(artboardSort, contents, win) {
 		return;
 	}
 
-	// get artboards
-	headingsMap.clear();
+	// 得到排序后的画板
 	let artboards = getArtboardsSorted(document.selectedPage, checkArtboardSort(artboardSort));
 	if (artboards.length === 0) {
 		console.log('no artboards');
@@ -521,7 +521,9 @@ export function createTableOfContents(artboardSort, contents, win) {
 		return;
 	}
 
-	if (!checkHeadings(artboards)) {
+	// 从画板中检测出标题
+	headingsMap.clear();
+	if (!checkHeadings(artboards, pageTitleMaster)) {
 		console.log('check headings error');
 		return;
 	}
@@ -544,6 +546,18 @@ export function createTableOfContents(artboardSort, contents, win) {
 		console.log("new content artboards'size greater than the old one.");
 		newContentsArtboards = addHeading(document.selectedPage, newHeadingsMap, topBannerMaster, bottomBannerMaster);
 		newHeadingsMap = updateContentsPage(newContentsArtboards, newHeadingsMap);
+	}
+
+	// 添加页码
+	for (let index = 0; index < artboards.length; index++) {
+		const artboard = artboards[index];
+		for (let index = 0; index < artboard.layers.length; index++) {
+			const layer = artboard.layers[index];
+			if (layer.type === 'SymbolInstance' && layer.master.name === 'PageTitle') {
+				artboard.layers[index].overrides[0].value = headingsMap.get(artboard.layers[index].overrides[1].value);
+				break;
+			}
+		}
 	}
 
 	if (newContentsArtboards.length > 0) {

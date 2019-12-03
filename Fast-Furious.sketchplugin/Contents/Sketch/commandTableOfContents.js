@@ -5417,12 +5417,23 @@ function checkHeadingSerial(lastSerial, currentSerial) {
   return !hasError;
 }
 
-function checkHeadings(artboards) {
+function focusArtboard(artboard) {
+  document.selectedLayers.forEach(function (layer) {
+    layer.selected = false;
+  });
+  artboard.parent.selected = true;
+  artboard.selected = true;
+  document.centerOnLayer(artboard);
+}
+
+function checkHeadings(artboards, pageTitleMaster) {
+  // 遍历所有画板，找出所有标题
   var artboardIndex = 0;
-  var lastSerial = ''; // 遍历所有画板，找出所有标题
+  var lastSerial = '';
 
   for (var index = 0; index < artboards.length; index++) {
-    ++artboardIndex;
+    ++artboardIndex; // 过滤掉目录页
+
     var artboard = artboards[index];
     var type = Settings.layerSettingForKey(artboard, 'layerType');
 
@@ -5432,90 +5443,79 @@ function checkHeadings(artboards) {
 
 
     for (var _index = 0; _index < artboard.layers.length; _index++) {
-      var layer = artboard.layers[_index];
+      var layer = artboard.layers[_index]; // 替换 Title 组件实例为 PageTitle 组件
+
+      if (layer.type === 'SymbolInstance' && layer.master.name === 'Title' && layer.frame.x === 0 && layer.frame.y === 0) {
+        var pageTitle = pageTitleMaster[0].createNewInstance();
+        pageTitle.parent = artboard;
+        pageTitle.overrides[1].value = layer.overrides[0].value;
+        layer.remove();
+      } // 处理 PageTitle
+
 
       if (layer.type === 'SymbolInstance' && layer.master.name === 'PageTitle') {
-        // 遍历标题所有层，找出标题内容
-        for (var _index2 = 0; _index2 < layer.overrides.length; _index2++) {
-          var override = layer.overrides[_index2]; // 检查是否有重复
+        var override = layer.overrides[1]; // 检查是否有重复
 
-          if (headingsMap.has(override.value)) {
-            // 标题格式不正确，提示用户修正
-            console.log('have the same heading:', override.value);
+        if (headingsMap.has(override.value)) {
+          // 标题有重复，提示用户修正
+          console.log('same heading:', override.value);
+          focusArtboard(artboard);
+          invalidHeadingOverride = override;
+          webContents.executeJavaScript("showCreateTocHint('\u6807\u9898\u6709\u91CD\u590D', ".concat(JSON.stringify(override.value), ")"));
+          return false;
+        } // 匹配六级标题：（1.）（1.1）（1.1.1）...
+
+
+        var pattern = /(^[1-9][0-9]{0,}\. )|(^[1-9][0-9]{0,}((\.[1-9][0-9]{0,}){1,5}) )/;
+        var regex = new RegExp(pattern);
+
+        if (override.value.length && !regex.test(override.value)) {
+          // 标题格式不正确，提示用户修正
+          console.log('invalid format heading:', override.value);
+          focusArtboard(artboard);
+          invalidHeadingOverride = override;
+          webContents.executeJavaScript("showCreateTocHint('\u65E0\u6548\u7684\u6807\u9898\uFF0C\u6B63\u786E\u683C\u5F0F\u793A\u4F8B:\u30101. XXX\u3011 \u6216\u8005 \u30101.1 XXX\u3011', ".concat(JSON.stringify(override.value), ")"));
+          return false;
+        } else {
+          // 标题格式正确，判断是否需要提示指定父级标题
+          var currentSerial = override.value.split(' ')[0];
+
+          if (currentSerial.endsWith('1') && !currentSerial.startsWith(lastSerial)) {
+            var parentHeading = Settings.layerSettingForKey(artboard, 'parentHeading');
+
+            if (!parentHeading) {
+              console.log('should add parent heading:', artboard.name);
+              focusArtboard(artboard);
+              noParentHeadingArtboard = artboard;
+              webContents.executeJavaScript("showCreateTocHint('\u9700\u8981\u6DFB\u52A0\u5F53\u524D\u6807\u9898\u7684\u7236\u6807\u9898\uFF0C\u5F53\u524D\u6807\u9898\u4E3A:' + ".concat(JSON.stringify(override.value), ")"));
+              return false;
+            } else if (!parentHeading.startsWith(currentSerial.slice(0, -2))) {
+              var serial = parentHeading.split(' ')[0];
+
+              if (!checkHeadingSerial(lastSerial, serial) || currentSerial !== serial + '.1') {
+                console.log('invalid sort parent heading:', artboard.name);
+                focusArtboard(artboard);
+                noParentHeadingArtboard = artboard;
+                webContents.executeJavaScript("showCreateTocHint('\u7236\u7EA7\u6807\u9898\u5E8F\u53F7\u4E0D\u6B63\u786E\uFF0C\u8BF7\u66F4\u6B63\u3002\u4E0A\u4E00\u6807\u9898\u5E8F\u53F7\u4E3A:' + ".concat(JSON.stringify(lastSerial), ", ").concat(JSON.stringify(parentHeading), ")"));
+                return false;
+              }
+            } else {
+              lastSerial = parentHeading.split(' ')[0];
+              headingsMap.set(parentHeading, artboardIndex);
+            }
+          } // 检查标题序号
+
+
+          if (!checkHeadingSerial(lastSerial, currentSerial)) {
+            console.log('invalid sort heading:', override.value);
+            focusArtboard();
             invalidHeadingOverride = override;
-            webContents.executeJavaScript("showCreateTocHint('\u6807\u9898\u6709\u91CD\u590D', ".concat(JSON.stringify(override.value), ")"));
+            webContents.executeJavaScript("showCreateTocHint('\u5F53\u524D\u6807\u9898\u5E8F\u53F7\u4E0D\u6B63\u786E\uFF0C\u8BF7\u66F4\u6B63\u3002\u4E0A\u4E00\u6807\u9898\u5E8F\u53F7\u4E3A:' + ".concat(JSON.stringify(lastSerial), ", ").concat(JSON.stringify(override.value), ")"));
             return false;
           }
 
-          if (override.affectedLayer.name === 'title') {
-            // 匹配六级标题：（1.）（1.1）（1.1.1）...
-            var pattern = /(^[1-9][0-9]{0,}\. )|(^[1-9][0-9]{0,}((\.[1-9][0-9]{0,}){1,5}) )/;
-            var regex = new RegExp(pattern);
-
-            if (override.value.length && !regex.test(override.value)) {
-              // 标题格式不正确，提示用户修正
-              console.log('invalid format heading:', override.value);
-              invalidHeadingOverride = override;
-              webContents.executeJavaScript("showCreateTocHint('\u65E0\u6548\u7684\u6807\u9898\uFF0C\u6B63\u786E\u683C\u5F0F\u793A\u4F8B:\u30101. XXX\u3011 \u6216\u8005 \u30101.1 XXX\u3011', ".concat(JSON.stringify(override.value), ")"));
-              return false;
-            } else {
-              // 标题格式正确，判断是否需要提示指定父级标题
-              var currentSerial = override.value.split(' ')[0];
-
-              if (currentSerial.endsWith('1') && !currentSerial.startsWith(lastSerial)) {
-                var parentHeading = Settings.layerSettingForKey(artboard, 'parentHeading');
-                console.log(currentSerial, parentHeading);
-
-                if (!parentHeading) {
-                  console.log('should add parent heading for this layer:', artboard.name);
-                  document.selectedLayers.forEach(function (layer) {
-                    layer.selected = false;
-                  });
-                  artboard.parent.selected = true;
-                  artboard.selected = true;
-                  document.centerOnLayer(artboard);
-                  noParentHeadingArtboard = artboard;
-                  webContents.executeJavaScript("showCreateTocHint('\u9700\u8981\u6DFB\u52A0\u5F53\u524D\u6807\u9898\u7684\u7236\u6807\u9898\uFF0C\u5F53\u524D\u6807\u9898\u4E3A:' + ".concat(JSON.stringify(override.value), ")"));
-                  return false;
-                } else if (!parentHeading.startsWith(currentSerial.slice(0, -2))) {
-                  var serial = parentHeading.split(' ')[0];
-
-                  if (!checkHeadingSerial(lastSerial, serial) || currentSerial !== serial + '.1') {
-                    document.selectedLayers.forEach(function (layer) {
-                      layer.selected = false;
-                    });
-                    artboard.parent.selected = true;
-                    artboard.selected = true;
-                    document.centerOnLayer(artboard);
-                    noParentHeadingArtboard = artboard;
-                    webContents.executeJavaScript("showCreateTocHint('\u7236\u7EA7\u6807\u9898\u5E8F\u53F7\u4E0D\u6B63\u786E\uFF0C\u8BF7\u66F4\u6B63\u3002\u4E0A\u4E00\u6807\u9898\u5E8F\u53F7\u4E3A:' + ".concat(JSON.stringify(lastSerial), ", ").concat(JSON.stringify(parentHeading), ")"));
-                    return false;
-                  }
-                } else {
-                  lastSerial = parentHeading.split(' ')[0];
-                  headingsMap.set(parentHeading, artboardIndex);
-                }
-              } // 检查标题序号
-
-
-              if (!checkHeadingSerial(lastSerial, currentSerial)) {
-                document.selectedLayers.forEach(function (layer) {
-                  layer.selected = false;
-                });
-                artboard.parent.selected = true;
-                artboard.selected = true;
-                document.centerOnLayer(artboard);
-                invalidHeadingOverride = override;
-                webContents.executeJavaScript("showCreateTocHint('\u5F53\u524D\u6807\u9898\u5E8F\u53F7\u4E0D\u6B63\u786E\uFF0C\u8BF7\u66F4\u6B63\u3002\u4E0A\u4E00\u6807\u9898\u5E8F\u53F7\u4E3A:' + ".concat(JSON.stringify(lastSerial), ", ").concat(JSON.stringify(override.value), ")"));
-                return false;
-              }
-
-              headingsMap.set(override.value, artboardIndex);
-              lastSerial = currentSerial;
-            }
-
-            break;
-          }
+          headingsMap.set(override.value, artboardIndex);
+          lastSerial = currentSerial;
         }
 
         break;
@@ -5634,7 +5634,6 @@ function updateContentsPage(contentsArtboards, headingsMap) {
 
   for (var index = 0; index < contentsArtboards.length; index++) {
     var artboard = contentsArtboards[index];
-    var override = artboard.layers[0].overrides[1];
     var value = void 0;
 
     if (index === 0) {
@@ -5655,7 +5654,8 @@ function updateContentsPage(contentsArtboards, headingsMap) {
       value = '2.' + index.toString() + ' 目录' + number;
     }
 
-    override.value = value; // Fix: 改完不会立马生效？
+    artboard.layers[0].overrides[2].value = value;
+    artboard.layers[0].overrides[1].value = index + 3; // 约定从第 3 页开始
 
     contentsTitles.push(value);
   } // insert contents page in TOC
@@ -5668,9 +5668,9 @@ function updateContentsPage(contentsArtboards, headingsMap) {
     if (!hasAddContents && parseInt(headingText.split('.')[0]) > 2) {
       hasAddContents = true;
 
-      for (var _index3 = 0; _index3 < contentsTitles.length; _index3++) {
-        var title = contentsTitles[_index3];
-        newHeadingMap.set(title, frontContentsPages + _index3 + 1);
+      for (var _index2 = 0; _index2 < contentsTitles.length; _index2++) {
+        var title = contentsTitles[_index2];
+        newHeadingMap.set(title, frontContentsPages + _index2 + 1);
       }
     }
 
@@ -5688,7 +5688,7 @@ function updateContentsPage(contentsArtboards, headingsMap) {
 
 function createTableOfContents(artboardSort, contents, win) {
   browserWindow = win;
-  webContents = contents; // add banner
+  webContents = contents; // 检测依赖的组件是否存在
 
   var pageTitleMaster = Sketch.find('SymbolMaster, [name="PageTitle"]');
   var topBannerMaster = Sketch.find('SymbolMaster, [name="TocTopBanner"]');
@@ -5699,10 +5699,9 @@ function createTableOfContents(artboardSort, contents, win) {
     UI.alert('Error', '请添加生成目录所需要模板: PageTitle、TocTopBanner 、TocBottomBanner');
     webContents.executeJavaScript("showCreateTocCreate()");
     return;
-  } // get artboards
+  } // 得到排序后的画板
 
 
-  headingsMap.clear();
   var artboards = Object(_Utilities__WEBPACK_IMPORTED_MODULE_0__["getArtboardsSorted"])(document.selectedPage, checkArtboardSort(artboardSort));
 
   if (artboards.length === 0) {
@@ -5710,9 +5709,12 @@ function createTableOfContents(artboardSort, contents, win) {
     UI.alert('Error', '当前文档为空，无需要生成目录');
     webContents.executeJavaScript("showCreateTocCreate()");
     return;
-  }
+  } // 从画板中检测出标题
 
-  if (!checkHeadings(artboards)) {
+
+  headingsMap.clear();
+
+  if (!checkHeadings(artboards, pageTitleMaster)) {
     console.log('check headings error');
     return;
   }
@@ -5735,6 +5737,20 @@ function createTableOfContents(artboardSort, contents, win) {
     console.log("new content artboards'size greater than the old one.");
     newContentsArtboards = addHeading(document.selectedPage, newHeadingsMap, topBannerMaster, bottomBannerMaster);
     newHeadingsMap = updateContentsPage(newContentsArtboards, newHeadingsMap);
+  } // 添加页码
+
+
+  for (var index = 0; index < artboards.length; index++) {
+    var artboard = artboards[index];
+
+    for (var _index3 = 0; _index3 < artboard.layers.length; _index3++) {
+      var layer = artboard.layers[_index3];
+
+      if (layer.type === 'SymbolInstance' && layer.master.name === 'PageTitle') {
+        artboard.layers[_index3].overrides[0].value = headingsMap.get(artboard.layers[_index3].overrides[1].value);
+        break;
+      }
+    }
   }
 
   if (newContentsArtboards.length > 0) {
