@@ -1,24 +1,23 @@
-import { getArtboardsSorted } from './Utilities';
-import { ArtboardSortEnum } from './Constants';
-
 let Sketch = require('sketch');
-let Page = require('sketch/dom').Page;
 let Artboard = require('sketch/dom').Artboard;
+let Settings = require('sketch/settings');
 let Group = require('sketch/dom').Group;
 let Text = require('sketch/dom').Text;
 let ShapePath = require('sketch/dom').ShapePath;
-let Settings = require('sketch/settings');
 let UI = require('sketch/ui');
 
-let document = require('sketch/dom').getSelectedDocument();
+import { getArtboardsSorted } from './Utilities';
+import { ArtboardSortEnum } from './Constants';
 
-let browserWindow = null;
-let webContents = null;
+let SelectedDocument = require('sketch/dom').getSelectedDocument();
 
-let headingsMap = new Map();
-let noParentHeadingArtboard;
-let invalidHeadingOverride;
+let BrowserWindow = null;
+let WebContents = null;
 
+let NoParentHeadingArtboard;
+let InvalidHeadingOverride;
+
+// 目录参数
 let ContentWidth = 7000;
 let ContentHeight = 4949;
 let GroupSpacing = 700;
@@ -27,18 +26,47 @@ let GroupLeftAndRightMargin = 200;
 let GroupCounts = 3;
 let GroupWidth = (ContentWidth - GroupLeftAndRightMargin * 2 - GroupSpacing * 2) / GroupCounts;
 
-function checkArtboardSort(artboardSort) {
-	if (artboardSort === 'Top to Bottom') {
-		return ArtboardSortEnum.Top2BottomByLayerList;
-	} else if (artboardSort === 'Bottom to Top') {
-		return ArtboardSortEnum.Bottom2TopByLayerList;
-	} else if (artboardSort === 'Left to Right') {
-		return ArtboardSortEnum.Left2RightByArtboard;
-	} else if (artboardSort === 'Right to Left') {
-		return ArtboardSortEnum.Right2LeftByArtboard;
-	} else if (artboardSort === 'Top to Bottom 1') {
-		return ArtboardSortEnum.Top2BottomByArtboard;
+// 全局变量，用于异步处理耗时操作
+let Artboards = [];
+let ArtboardIndex = 0;
+let HeadingsMap = new Map();
+let PageTitleMaster;
+let TopBannerMaster;
+let BottomBannerMaster;
+let LastHeadingSerial = '';
+
+function addPageNumber(contentsArtboards) {
+	Sketch.find('Text, [name="{page}"]').forEach(layer => {
+		layer.remove();
+	});
+
+	for (let index = 0; index < Artboards.length; index++) {
+		const artboard = Artboards[index];
+		let layers = artboard.layers;
+		for (let index = 0; index < layers.length; index++) {
+			const layer = layers[index];
+			if (layer.name === '{page}') {
+				layer.remove();
+				continue;
+			}
+
+			if (layer.type === 'SymbolInstance' && layer.master.name === 'PageTitle') {
+				layers[index].overrides[0].value = HeadingsMap.get(layers[index].overrides[1].value);
+				break;
+			}
+		}
 	}
+
+	if (contentsArtboards.length > 0) {
+		SelectedDocument.selectedLayers.forEach(layer => {
+			layer.selected = false;
+		});
+		contentsArtboards[0].selected = true;
+		SelectedDocument.centerOnLayer(contentsArtboards[0]);
+	}
+
+	BrowserWindow.close();
+	Sketch.UI.message('Create Successfully! 🙌');
 }
 
 function createHeading(artboard, originalX, originalY, headingLevel, headingText, pageNumber) {
@@ -180,18 +208,8 @@ function createHeading(artboard, originalX, originalY, headingLevel, headingText
 	});
 	group.adjustToFit();
 	group.layers = [placeholder, serialAndContent, separator, page];
-	return group;
-}
 
-export function setParentHeadingOrOverrideValue(value) {
-	if (invalidHeadingOverride) {
-		invalidHeadingOverride.value = value;
-		invalidHeadingOverride = undefined;
-	}
-	if (noParentHeadingArtboard) {
-		Settings.setLayerSettingForKey(noParentHeadingArtboard, 'parentHeading', value);
-		noParentHeadingArtboard = undefined;
-	}
+	return group;
 }
 
 function checkHeadingSerial(lastSerial, currentSerial) {
@@ -235,217 +253,16 @@ function checkHeadingSerial(lastSerial, currentSerial) {
 }
 
 function focusArtboard(artboard) {
-	document.selectedLayers.forEach(layer => {
+	SelectedDocument.selectedLayers.forEach(layer => {
 		layer.selected = false;
 	});
 	artboard.parent.selected = true;
 	artboard.selected = true;
-	document.centerOnLayer(artboard);
-}
-
-function checkHeadings(artboards, pageTitleMaster) {
-	// 遍历所有画板，找出所有标题
-	let artboardIndex = 0;
-	let lastSerial = '';
-	for (let index = 0; index < artboards.length; index++) {
-		++artboardIndex;
-
-		// 过滤掉目录页
-		const artboard = artboards[index];
-		let type = Settings.layerSettingForKey(artboard, 'layerType');
-		if (type === 'TOC') {
-			continue;
-		}
-
-		// 遍历画板所有层，找出标题层
-		for (let index = 0; index < artboard.layers.length; index++) {
-			const layer = artboard.layers[index];
-
-			// 替换 Title 组件实例为 PageTitle 组件
-			if (
-				layer.type === 'SymbolInstance' &&
-				layer.master.name === 'Title' &&
-				(layer.frame.x === 0 && layer.frame.y === 0)
-			) {
-				let pageTitle = pageTitleMaster[0].createNewInstance();
-				pageTitle.parent = artboard;
-				pageTitle.overrides[1].value = layer.overrides[0].value;
-				layer.remove();
-			}
-
-			// 处理 PageTitle
-			if (layer.type === 'SymbolInstance' && layer.master.name === 'PageTitle') {
-				const override = layer.overrides[1];
-
-				// 检查是否有重复
-				if (headingsMap.has(override.value)) {
-					// 标题有重复，提示用户修正
-					console.log('same heading:', override.value);
-					focusArtboard(artboard);
-					invalidHeadingOverride = override;
-					webContents.executeJavaScript(`showCreateTocHint('标题有重复', ${JSON.stringify(override.value)})`);
-
-					return false;
-				}
-
-				// 匹配六级标题：（1.）（1.1）（1.1.1）...
-				let pattern = /(^[1-9][0-9]{0,}\. )|(^[1-9][0-9]{0,}((\.[1-9][0-9]{0,}){1,5}) )/;
-				let regex = new RegExp(pattern);
-				if (override.value.length && !regex.test(override.value)) {
-					// 标题格式不正确，提示用户修正
-					console.log('invalid format heading:', override.value);
-					focusArtboard(artboard);
-					invalidHeadingOverride = override;
-					webContents.executeJavaScript(
-						`showCreateTocHint('无效的标题，正确格式示例:【1. XXX】 或者 【1.1 XXX】', ${JSON.stringify(
-							override.value
-						)})`
-					);
-
-					return false;
-				} else {
-					// 标题格式正确，判断是否需要提示指定父级标题
-					let currentSerial = override.value.split(' ')[0];
-					if (currentSerial.endsWith('1') && !currentSerial.startsWith(lastSerial)) {
-						let parentHeading = Settings.layerSettingForKey(artboard, 'parentHeading');
-						if (!parentHeading) {
-							console.log('should add parent heading:', artboard.name);
-							focusArtboard(artboard);
-							noParentHeadingArtboard = artboard;
-							webContents.executeJavaScript(
-								`showCreateTocHint('需要添加当前标题的父标题，当前标题为:' + ${JSON.stringify(
-									override.value
-								)})`
-							);
-
-							return false;
-						} else if (!parentHeading.startsWith(currentSerial.slice(0, -2))) {
-							let serial = parentHeading.split(' ')[0];
-							if (!checkHeadingSerial(lastSerial, serial) || currentSerial !== serial + '.1') {
-								console.log('invalid sort parent heading:', artboard.name);
-								focusArtboard(artboard);
-								noParentHeadingArtboard = artboard;
-								webContents.executeJavaScript(
-									`showCreateTocHint('父级标题序号不正确，请更正。上一标题序号为:' + ${JSON.stringify(
-										lastSerial
-									)}, ${JSON.stringify(parentHeading)})`
-								);
-
-								return false;
-							}
-						} else {
-							lastSerial = parentHeading.split(' ')[0];
-							headingsMap.set(parentHeading, artboardIndex);
-						}
-					}
-
-					// 检查标题序号
-					if (!checkHeadingSerial(lastSerial, currentSerial)) {
-						console.log('invalid sort heading:', override.value);
-						focusArtboard();
-						invalidHeadingOverride = override;
-						webContents.executeJavaScript(
-							`showCreateTocHint('当前标题序号不正确，请更正。上一标题序号为:' + ${JSON.stringify(
-								lastSerial
-							)}, ${JSON.stringify(override.value)})`
-						);
-
-						return false;
-					}
-
-					headingsMap.set(override.value, artboardIndex);
-					lastSerial = currentSerial;
-				}
-
-				break;
-			}
-		}
-	}
-
-	return true;
-}
-
-function addHeading(page, headingsMap, topBannerMaster, bottomBannerMaster) {
-	// delete contents artboard
-	page.layers.forEach(artboard => {
-		if (Settings.layerSettingForKey(artboard, 'layerType') === 'TOC') {
-			artboard.remove();
-		}
-	});
-
-	let artboard;
-	let contentsArtboards = [];
-	let contentsPageIndex = 0;
-	let lastLevel = 1;
-	let column = 0;
-	let originalY = GroupTopMargin;
-	let needAddNewArtboard = true;
-	for (let [headingText, pageNumber] of headingsMap) {
-		// create artboard
-		if (needAddNewArtboard) {
-			artboard = new Artboard({
-				parent: page,
-				name: 'Contents ' + (contentsPageIndex + 1).toString(),
-				frame: {
-					x: 0 + (ContentWidth + 50) * contentsPageIndex,
-					y: 0,
-					width: ContentWidth,
-					height: ContentHeight,
-				},
-			});
-			Settings.setLayerSettingForKey(artboard, 'layerType', 'TOC');
-			contentsArtboards.push(artboard);
-
-			let topBanner = topBannerMaster[0].createNewInstance();
-			let bottomBanner = bottomBannerMaster[0].createNewInstance();
-			bottomBanner.frame.y = ContentHeight - bottomBanner.frame.height;
-			topBanner.parent = artboard;
-			bottomBanner.parent = artboard;
-
-			contentsPageIndex += 1;
-		}
-
-		// check level
-		let currentLevel;
-		let serialText = headingText.split(' ')[0];
-		if (serialText.endsWith('.')) {
-			currentLevel = 1;
-		} else {
-			currentLevel = serialText.split('.').length;
-		}
-
-		// create headings
-		let originalX = GroupLeftAndRightMargin + GroupWidth * column + GroupSpacing * column;
-		if (!needAddNewArtboard) {
-			if (lastLevel === 1 && currentLevel === 1) {
-				originalY += 100;
-			} else {
-				originalY += 46;
-			}
-		}
-		lastLevel = currentLevel;
-		let group = createHeading(artboard, originalX, originalY, currentLevel, headingText, pageNumber);
-
-		if (group.frame.y > 4000) {
-			column += 1;
-			originalY = GroupTopMargin;
-		} else {
-			originalY += group.frame.height;
-		}
-
-		if (column > 2) {
-			needAddNewArtboard = true;
-			column = 0;
-		} else {
-			needAddNewArtboard = false;
-		}
-	}
-
-	return contentsArtboards;
+	SelectedDocument.centerOnLayer(artboard);
 }
 
 function updateContentsPage(contentsArtboards, headingsMap) {
-	// set contents page title
+	// set contents page heading
 	let contentsTitles = [];
 	for (let index = 0; index < contentsArtboards.length; index++) {
 		const artboard = contentsArtboards[index];
@@ -497,77 +314,313 @@ function updateContentsPage(contentsArtboards, headingsMap) {
 	return newHeadingMap;
 }
 
-export function createTableOfContents(artboardSort, contents, win) {
-	browserWindow = win;
-	webContents = contents;
+function addHeading(page, headingsMap) {
+	// delete contents artboard
+	page.layers.forEach(artboard => {
+		if (Settings.layerSettingForKey(artboard, 'layerType') === 'TOC') {
+			artboard.remove();
+		}
+	});
 
-	// 检测依赖的组件是否存在
-	let pageTitleMaster = Sketch.find('SymbolMaster, [name="PageTitle"]');
-	let topBannerMaster = Sketch.find('SymbolMaster, [name="TocTopBanner"]');
-	let bottomBannerMaster = Sketch.find('SymbolMaster, [name="TocBottomBanner"]');
-	if (!pageTitleMaster.length || !topBannerMaster.length || !bottomBannerMaster.length) {
-		console.log('can not found the banner');
-		UI.alert('Error', '请添加生成目录所需要模板: PageTitle、TocTopBanner 、TocBottomBanner');
-		webContents.executeJavaScript(`showCreateTocCreate()`);
-		return;
+	let artboard;
+	let contentsArtboards = [];
+	let contentsPageIndex = 0;
+	let lastLevel = 1;
+	let column = 0;
+	let originalY = GroupTopMargin;
+	let needAddNewArtboard = true;
+	for (let [headingText, pageNumber] of headingsMap) {
+		// create artboard
+		if (needAddNewArtboard) {
+			artboard = new Artboard({
+				parent: page,
+				name: 'Contents ' + (contentsPageIndex + 1).toString(),
+				frame: {
+					x: 0 + (ContentWidth + 50) * contentsPageIndex,
+					y: 0,
+					width: ContentWidth,
+					height: ContentHeight,
+				},
+			});
+			Settings.setLayerSettingForKey(artboard, 'layerType', 'TOC');
+			contentsArtboards.push(artboard);
+
+			let topBanner = TopBannerMaster[0].createNewInstance();
+			let bottomBanner = BottomBannerMaster[0].createNewInstance();
+			bottomBanner.frame.y = ContentHeight - bottomBanner.frame.height;
+			topBanner.parent = artboard;
+			bottomBanner.parent = artboard;
+
+			contentsPageIndex += 1;
+		}
+
+		// check level
+		let currentLevel;
+		let serialText = headingText.split(' ')[0];
+		if (serialText.endsWith('.')) {
+			currentLevel = 1;
+		} else {
+			currentLevel = serialText.split('.').length;
+		}
+
+		// create headings
+		let originalX = GroupLeftAndRightMargin + GroupWidth * column + GroupSpacing * column;
+		if (!needAddNewArtboard) {
+			if (lastLevel === 1 && currentLevel === 1) {
+				originalY += 100;
+			} else {
+				originalY += 46;
+			}
+		}
+		lastLevel = currentLevel;
+		let group = createHeading(artboard, originalX, originalY, currentLevel, headingText, pageNumber);
+
+		if (group.frame.y > 4000) {
+			column += 1;
+			originalY = GroupTopMargin;
+		} else {
+			originalY += group.frame.height;
+		}
+
+		if (column > 2) {
+			needAddNewArtboard = true;
+			column = 0;
+		} else {
+			needAddNewArtboard = false;
+		}
 	}
 
-	// 得到排序后的画板
-	let artboards = getArtboardsSorted(document.selectedPage, checkArtboardSort(artboardSort));
-	if (artboards.length === 0) {
-		console.log('no artboards');
-		UI.alert('Error', '当前文档为空，无需要生成目录');
-		webContents.executeJavaScript(`showCreateTocCreate()`);
-		return;
-	}
+	return contentsArtboards;
+}
 
-	// 从画板中检测出标题
-	headingsMap.clear();
-	if (!checkHeadings(artboards, pageTitleMaster)) {
-		console.log('check headings error');
-		return;
-	}
-	if (headingsMap.size === 0) {
-		console.log('no headings');
-		UI.alert('Error', '找不到目录页，请检查标题设置是否正确');
-		webContents.executeJavaScript(`showCreateTocCreate()`);
-		return;
-	}
+function checkHeading(artboard) {
+	// 过滤掉目录页
+	let type = Settings.layerSettingForKey(artboard, 'layerType');
+	if (type !== 'TOC') {
+		// 遍历画板所有层，找出标题层
+		let layers = artboard.layers;
+		for (let index = 0; index < layers.length; index++) {
+			const layer = layers[index];
 
-	// add headings
-	let contentsArtboards = addHeading(document.selectedPage, headingsMap, topBannerMaster, bottomBannerMaster);
-	let newHeadingsMap = updateContentsPage(contentsArtboards, headingsMap);
+			if (layer.type !== 'SymbolInstance') continue;
 
-	// add headings again
-	let newContentsArtboards = addHeading(document.selectedPage, newHeadingsMap, topBannerMaster, bottomBannerMaster);
-	newHeadingsMap = updateContentsPage(newContentsArtboards, newHeadingsMap);
+			// 替换 Title 组件实例为 PageTitle 组件
+			if (
+				layer.type === 'SymbolInstance' &&
+				layer.master.name === 'Title' &&
+				(layer.frame.x === 0 && layer.frame.y === 0)
+			) {
+				let pageTitle = PageTitleMaster[0].createNewInstance();
+				pageTitle.parent = artboard;
+				pageTitle.overrides[1].value = layer.overrides[0].value;
+				layer.remove();
+			}
 
-	if (contentsArtboards.length !== newContentsArtboards.length) {
-		console.log("new content artboards'size greater than the old one.");
-		newContentsArtboards = addHeading(document.selectedPage, newHeadingsMap, topBannerMaster, bottomBannerMaster);
-		newHeadingsMap = updateContentsPage(newContentsArtboards, newHeadingsMap);
-	}
-
-	// 添加页码
-	for (let index = 0; index < artboards.length; index++) {
-		const artboard = artboards[index];
-		for (let index = 0; index < artboard.layers.length; index++) {
-			const layer = artboard.layers[index];
+			// 处理 PageTitle
 			if (layer.type === 'SymbolInstance' && layer.master.name === 'PageTitle') {
-				artboard.layers[index].overrides[0].value = headingsMap.get(artboard.layers[index].overrides[1].value);
+				const override = layer.overrides[1];
+
+				// 检查是否有重复
+				if (HeadingsMap.has(override.value)) {
+					// 标题有重复，提示用户修正
+					console.log('same heading:', override.value);
+					focusArtboard(artboard);
+					InvalidHeadingOverride = override;
+					WebContents.executeJavaScript(`showCreateTocHint('标题有重复', ${JSON.stringify(override.value)})`);
+
+					return false;
+				}
+
+				// 匹配六级标题：（1.）（1.1）（1.1.1）...
+				let pattern = /(^[1-9][0-9]{0,}\. )|(^[1-9][0-9]{0,}((\.[1-9][0-9]{0,}){1,5}) )/;
+				let regex = new RegExp(pattern);
+				if (override.value.length && !regex.test(override.value)) {
+					// 标题格式不正确，提示用户修正
+					console.log('invalid format heading:', override.value);
+					focusArtboard(artboard);
+					InvalidHeadingOverride = override;
+					WebContents.executeJavaScript(
+						`showCreateTocHint('无效的标题，正确格式示例:【1. XXX】 或者 【1.1 XXX】', ${JSON.stringify(
+							override.value
+						)})`
+					);
+
+					return false;
+				} else {
+					// 标题格式正确，判断是否需要提示指定父级标题
+					let currentSerial = override.value.split(' ')[0];
+					if (currentSerial.endsWith('1') && !currentSerial.startsWith(LastHeadingSerial)) {
+						let parentHeading = Settings.layerSettingForKey(artboard, 'parentHeading');
+						if (!parentHeading) {
+							console.log('should add parent heading:', artboard.name);
+							focusArtboard(artboard);
+							NoParentHeadingArtboard = artboard;
+							WebContents.executeJavaScript(
+								`showCreateTocHint('需要添加当前标题的父标题，当前标题为:' + ${JSON.stringify(
+									override.value
+								)})`
+							);
+
+							return false;
+						} else if (!parentHeading.startsWith(currentSerial.slice(0, -2))) {
+							let serial = parentHeading.split(' ')[0];
+							if (!checkHeadingSerial(LastHeadingSerial, serial) || currentSerial !== serial + '.1') {
+								console.log('invalid sort parent heading:', artboard.name);
+								focusArtboard(artboard);
+								NoParentHeadingArtboard = artboard;
+								WebContents.executeJavaScript(
+									`showCreateTocHint('父级标题序号不正确，请更正。上一标题序号为:' + ${JSON.stringify(
+										LastHeadingSerial
+									)}, ${JSON.stringify(parentHeading)})`
+								);
+
+								return false;
+							}
+						} else {
+							LastHeadingSerial = parentHeading.split(' ')[0];
+							HeadingsMap.set(parentHeading, ArtboardIndex + 1);
+						}
+					}
+
+					// 检查标题序号
+					if (!checkHeadingSerial(LastHeadingSerial, currentSerial)) {
+						console.log('invalid sort heading:', override.value);
+						focusArtboard(artboard);
+						InvalidHeadingOverride = override;
+						WebContents.executeJavaScript(
+							`showCreateTocHint('当前标题序号不正确，请更正。上一标题序号为:' + ${JSON.stringify(
+								LastHeadingSerial
+							)}, ${JSON.stringify(override.value)})`
+						);
+
+						return false;
+					}
+
+					HeadingsMap.set(override.value, ArtboardIndex + 1);
+					LastHeadingSerial = currentSerial;
+				}
+
 				break;
 			}
 		}
 	}
 
-	if (newContentsArtboards.length > 0) {
-		document.selectedLayers.forEach(layer => {
-			layer.selected = false;
-		});
-		newContentsArtboards[0].selected = true;
-		document.centerOnLayer(newContentsArtboards[0]);
+	// 判断最后一个
+	if (ArtboardIndex < Artboards.length - 1) {
+		++ArtboardIndex;
+		setTimeout(checkHeading.bind(null, Artboards[ArtboardIndex]), 5);
+	} else {
+		if (HeadingsMap.size === 0) {
+			console.log('no headings');
+			UI.alert('Error', '找不到目录页，请检查标题设置是否正确');
+			WebContents.executeJavaScript(`showCreateTocCreate()`);
+			return;
+		}
+
+		// add headings
+		let contentsArtboards = addHeading(SelectedDocument.selectedPage, HeadingsMap);
+		let newHeadingsMap = updateContentsPage(contentsArtboards, HeadingsMap);
+
+		// add headings again
+		let newContentsArtboards = addHeading(SelectedDocument.selectedPage, newHeadingsMap);
+		newHeadingsMap = updateContentsPage(newContentsArtboards, newHeadingsMap);
+
+		if (contentsArtboards.length !== newContentsArtboards.length) {
+			console.log("new content artboards'size greater than the old one.");
+			newContentsArtboards = addHeading(SelectedDocument.selectedPage, newHeadingsMap);
+			newHeadingsMap = updateContentsPage(newContentsArtboards, newHeadingsMap);
+		}
+
+		// 添加页码
+		setTimeout(addPageNumber.bind(null, newContentsArtboards), 5);
+	}
+}
+
+function checkArtboardSort(artboardSort) {
+	if (artboardSort === 'Top to Bottom') {
+		return ArtboardSortEnum.Top2BottomByLayerList;
+	} else if (artboardSort === 'Bottom to Top') {
+		return ArtboardSortEnum.Bottom2TopByLayerList;
+	} else if (artboardSort === 'Left to Right') {
+		return ArtboardSortEnum.Left2RightByArtboard;
+	} else if (artboardSort === 'Right to Left') {
+		return ArtboardSortEnum.Right2LeftByArtboard;
+	} else if (artboardSort === 'Top to Bottom 1') {
+		return ArtboardSortEnum.Top2BottomByArtboard;
+	}
+}
+
+function checkMasters() {
+	PageTitleMaster = Sketch.find('SymbolMaster, [name="PageTitle"]');
+	TopBannerMaster = Sketch.find('SymbolMaster, [name="TocTopBanner"]');
+	BottomBannerMaster = Sketch.find('SymbolMaster, [name="TocBottomBanner"]');
+	if (!PageTitleMaster.length || !TopBannerMaster.length || !BottomBannerMaster.length) {
+		console.log('can not found the banner');
+		UI.alert('Error', '请添加生成目录所需要组件: PageTitle、TocTopBanner 、TocBottomBanner');
+		WebContents.executeJavaScript(`showCreateTocCreate()`);
+		return false;
 	}
 
-	win.close();
-	Sketch.UI.message('Create Successfully! 🙌');
+	return true;
+}
+
+function checkSelectedPage() {
+	let page = SelectedDocument.selectedPage;
+	if (!page) {
+		UI.alert('Error', '请选中“文档页”');
+		return false;
+	} else if (page.isSymbolsPage()) {
+		UI.alert('Error', '请选中“文档页”，当前选中的是“组件页”');
+		return false;
+	} else if (Settings.layerSettingForKey(page, 'layerType') === 'TOC') {
+		UI.alert('Error', '请选中“文档页”，当前选中的是“目录页”');
+		return false;
+	}
+
+	return true;
+}
+
+export function createTableOfContents(artboardSort, contents, win, isContinue = false) {
+	if (!isContinue) {
+		BrowserWindow = win;
+		WebContents = contents;
+
+		if (!checkSelectedPage()) {
+			WebContents.executeJavaScript(`showCreateTocCreate()`);
+			return;
+		}
+
+		if (!checkMasters()) {
+			WebContents.executeJavaScript(`showCreateTocCreate()`);
+			return;
+		}
+
+		// 得到排序后的画板
+		Artboards = getArtboardsSorted(SelectedDocument.selectedPage, checkArtboardSort(artboardSort));
+		if (Artboards.length === 0) {
+			console.log('no artboards');
+			UI.alert('Error', '当前文档为空，无需要生成目录');
+			WebContents.executeJavaScript(`showCreateTocCreate()`);
+			return;
+		}
+
+		// 从画板中检测出标题
+		HeadingsMap.clear();
+		ArtboardIndex = 0;
+		LastHeadingSerial = '';
+		setTimeout(checkHeading.bind(null, Artboards[0]), 5);
+	} else {
+		setTimeout(checkHeading.bind(null, Artboards[ArtboardIndex]), 5);
+	}
+}
+
+export function setParentHeadingOrOverrideValue(value) {
+	if (InvalidHeadingOverride) {
+		InvalidHeadingOverride.value = value;
+		InvalidHeadingOverride = undefined;
+	}
+	if (NoParentHeadingArtboard) {
+		Settings.setLayerSettingForKey(NoParentHeadingArtboard, 'parentHeading', value);
+		NoParentHeadingArtboard = undefined;
+	}
 }

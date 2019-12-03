@@ -60,7 +60,7 @@ const theUI = options => {
 
 	contents.on('createContinue', value => {
 		setParentHeadingOrOverrideValue(value);
-		createTableOfContents(artboardSort, contents, win);
+		createTableOfContents(artboardSort, contents, win, true);
 	});
 
 	contents.on('exportMetadata', path => {
