@@ -5105,6 +5105,111 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
+/***/ "./src/lib/AddPageNumber.js":
+/*!**********************************!*\
+  !*** ./src/lib/AddPageNumber.js ***!
+  \**********************************/
+/*! exports provided: addPageNumber */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "addPageNumber", function() { return addPageNumber; });
+/* harmony import */ var _Utilities__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Utilities */ "./src/lib/Utilities.js");
+var Sketch = __webpack_require__(/*! sketch */ "sketch");
+
+var Settings = __webpack_require__(/*! sketch/settings */ "sketch/settings");
+
+var Text = __webpack_require__(/*! sketch/dom */ "sketch/dom").Text;
+
+var UI = __webpack_require__(/*! sketch/ui */ "sketch/ui");
+
+
+
+var SelectedDocument = __webpack_require__(/*! sketch/dom */ "sketch/dom").getSelectedDocument();
+
+var BrowserWindow = null;
+var WebContents = null;
+var Artboards = [];
+var ArtboardIndex = 0;
+var ArtboardSort = '';
+
+function handleArtboard(artboard) {
+  var instances = Sketch.find('SymbolInstance', artboard);
+
+  for (var index = 0; index < instances.length; index++) {
+    var instance = instances[index];
+
+    if (instance.master.name === 'Title') {
+      var titleOverride = instance.overrides[0];
+
+      if (titleOverride) {
+        var pageNumber = new Text({
+          parent: artboard,
+          text: '0',
+          name: 'pageNumber',
+          style: {
+            borders: [],
+            fontFamily: 'PingFang SC',
+            fontSize: 88,
+            fontWeight: 4,
+            textColor: '#FFFFFF',
+            alignment: 'right',
+            verticalAlignment: 'center'
+          },
+          frame: {
+            x: 6747,
+            y: 88,
+            width: 53,
+            height: 123
+          }
+        });
+        pageNumber.text = (ArtboardIndex + 1).toString();
+        Settings.setLayerSettingForKey(pageNumber, 'textType', 'pageNumber');
+        break;
+      }
+    }
+  }
+
+  if (ArtboardIndex === Artboards.length - 1) {
+    BrowserWindow.close();
+    Sketch.UI.message('🙌 Successfully! 🙌');
+  } else {
+    ++ArtboardIndex;
+    setTimeout(handleArtboard.bind(null, Artboards[ArtboardIndex]), 20);
+  }
+}
+
+function removePageNumber() {
+  Sketch.find('Text', SelectedDocument.selectedPage).forEach(function (text) {
+    if (Settings.layerSettingForKey(text, 'textType') === 'pageNumber') {
+      text.remove();
+    }
+  });
+  Artboards = Object(_Utilities__WEBPACK_IMPORTED_MODULE_0__["getArtboardsSorted"])(SelectedDocument.selectedPage, ArtboardSort);
+
+  if (Artboards.length > 0) {
+    ArtboardIndex = 0;
+    setTimeout(handleArtboard.bind(null, Artboards[0]), 20);
+  }
+}
+
+function clearOldPageNumber() {
+  Sketch.find('Text, [name="{page}"]').forEach(function (layer) {
+    layer.remove();
+  });
+  setTimeout(removePageNumber.bind(null), 20);
+}
+
+function addPageNumber(artboardSort, contents, win) {
+  BrowserWindow = win;
+  WebContents = contents;
+  ArtboardSort = artboardSort;
+  setTimeout(clearOldPageNumber.bind(null), 20);
+}
+
+/***/ }),
+
 /***/ "./src/lib/Constants.js":
 /*!******************************!*\
   !*** ./src/lib/Constants.js ***!
@@ -5145,7 +5250,6 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "createTableOfContents", function() { return createTableOfContents; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "setParentHeadingOrOverrideValue", function() { return setParentHeadingOrOverrideValue; });
 /* harmony import */ var _Utilities__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Utilities */ "./src/lib/Utilities.js");
-/* harmony import */ var _Constants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Constants */ "./src/lib/Constants.js");
 function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest(); }
 
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
@@ -5167,7 +5271,6 @@ var Text = __webpack_require__(/*! sketch/dom */ "sketch/dom").Text;
 var ShapePath = __webpack_require__(/*! sketch/dom */ "sketch/dom").ShapePath;
 
 var UI = __webpack_require__(/*! sketch/ui */ "sketch/ui");
-
 
 
 
@@ -5227,7 +5330,7 @@ function addPageNumber(contentsArtboards) {
   }
 
   BrowserWindow.close();
-  Sketch.UI.message('Create Successfully! 🙌');
+  Sketch.UI.message('🙌 Successfully! 🙌');
 }
 
 function createHeading(artboard, originalX, originalY, headingLevel, headingText, pageNumber) {
@@ -5718,20 +5821,6 @@ function checkHeading(artboard) {
   }
 }
 
-function checkArtboardSort(artboardSort) {
-  if (artboardSort === 'Top to Bottom') {
-    return _Constants__WEBPACK_IMPORTED_MODULE_1__["ArtboardSortEnum"].Top2BottomByLayerList;
-  } else if (artboardSort === 'Bottom to Top') {
-    return _Constants__WEBPACK_IMPORTED_MODULE_1__["ArtboardSortEnum"].Bottom2TopByLayerList;
-  } else if (artboardSort === 'Left to Right') {
-    return _Constants__WEBPACK_IMPORTED_MODULE_1__["ArtboardSortEnum"].Left2RightByArtboard;
-  } else if (artboardSort === 'Right to Left') {
-    return _Constants__WEBPACK_IMPORTED_MODULE_1__["ArtboardSortEnum"].Right2LeftByArtboard;
-  } else if (artboardSort === 'Top to Bottom 1') {
-    return _Constants__WEBPACK_IMPORTED_MODULE_1__["ArtboardSortEnum"].Top2BottomByArtboard;
-  }
-}
-
 function checkMasters() {
   PageTitleMaster = Sketch.find('SymbolMaster, [name="PageTitle"]');
   TopBannerMaster = Sketch.find('SymbolMaster, [name="TocTopBanner"]');
@@ -5782,7 +5871,7 @@ function createTableOfContents(artboardSort, contents, win) {
     } // 得到排序后的画板
 
 
-    Artboards = Object(_Utilities__WEBPACK_IMPORTED_MODULE_0__["getArtboardsSorted"])(SelectedDocument.selectedPage, checkArtboardSort(artboardSort));
+    Artboards = Object(_Utilities__WEBPACK_IMPORTED_MODULE_0__["getArtboardsSorted"])(SelectedDocument.selectedPage, artboardSort);
 
     if (Artboards.length === 0) {
       console.log('no artboards');
@@ -6224,11 +6313,13 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var sketch_module_web_view__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! sketch-module-web-view */ "./node_modules/sketch-module-web-view/lib/index.js");
 /* harmony import */ var sketch_module_web_view__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(sketch_module_web_view__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var _lib_CreateTableOfContents__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../lib/CreateTableOfContents */ "./src/lib/CreateTableOfContents.js");
-/* harmony import */ var _lib_ExportMetadata__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../lib/ExportMetadata */ "./src/lib/ExportMetadata.js");
-/* harmony import */ var _resources_views_theme_index__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../../resources/views/theme/index */ "./resources/views/theme/index.js");
-/* harmony import */ var _Utilities__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./Utilities */ "./src/lib/Utilities.js");
-/* harmony import */ var _skpm_dialog__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @skpm/dialog */ "./node_modules/@skpm/dialog/lib/index.js");
-/* harmony import */ var _skpm_dialog__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(_skpm_dialog__WEBPACK_IMPORTED_MODULE_5__);
+/* harmony import */ var _lib_AddPageNumber__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../lib/AddPageNumber */ "./src/lib/AddPageNumber.js");
+/* harmony import */ var _lib_ExportMetadata__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../lib/ExportMetadata */ "./src/lib/ExportMetadata.js");
+/* harmony import */ var _resources_views_theme_index__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../../resources/views/theme/index */ "./resources/views/theme/index.js");
+/* harmony import */ var _Utilities__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./Utilities */ "./src/lib/Utilities.js");
+/* harmony import */ var _skpm_dialog__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! @skpm/dialog */ "./node_modules/@skpm/dialog/lib/index.js");
+/* harmony import */ var _skpm_dialog__WEBPACK_IMPORTED_MODULE_6___default = /*#__PURE__*/__webpack_require__.n(_skpm_dialog__WEBPACK_IMPORTED_MODULE_6__);
+
 
 
 
@@ -6239,7 +6330,7 @@ var handingTask = false;
 
 var theUI = function theUI(options) {
   var themeColor = typeof MSTheme !== 'undefined' && MSTheme.sharedTheme().isDark() ? 'dark' : 'light';
-  var theme = Object(_resources_views_theme_index__WEBPACK_IMPORTED_MODULE_3__["default"])(themeColor);
+  var theme = Object(_resources_views_theme_index__WEBPACK_IMPORTED_MODULE_4__["default"])(themeColor);
   var winOptions = {
     identifier: options.identifier,
     title: options.title,
@@ -6270,7 +6361,7 @@ var theUI = function theUI(options) {
       contents.executeJavaScript("showExportAlert()");
     } else {
       if (handingTask) {
-        Object(_lib_ExportMetadata__WEBPACK_IMPORTED_MODULE_2__["cancelTask"])();
+        Object(_lib_ExportMetadata__WEBPACK_IMPORTED_MODULE_3__["cancelTask"])();
       } else {
         win.setClosable(true);
         win.close();
@@ -6278,6 +6369,9 @@ var theUI = function theUI(options) {
     }
   });
   win.loadURL(__webpack_require__(/*! ../../resources/webview.html */ "./resources/webview.html"));
+  contents.on('addPageNumber', function () {
+    Object(_lib_AddPageNumber__WEBPACK_IMPORTED_MODULE_2__["addPageNumber"])(artboardSort, contents, win);
+  });
   contents.on('createTableOfContent', function () {
     Object(_lib_CreateTableOfContents__WEBPACK_IMPORTED_MODULE_1__["createTableOfContents"])(artboardSort, contents, win);
   });
@@ -6288,10 +6382,10 @@ var theUI = function theUI(options) {
   contents.on('exportMetadata', function (path) {
     handingTask = true;
     win.setClosable(false);
-    Object(_lib_ExportMetadata__WEBPACK_IMPORTED_MODULE_2__["exportMetadata"])(path + '/' + Object(_Utilities__WEBPACK_IMPORTED_MODULE_4__["getExportDir"])(), contents, win); // handingTask = false;
+    Object(_lib_ExportMetadata__WEBPACK_IMPORTED_MODULE_3__["exportMetadata"])(path + '/' + Object(_Utilities__WEBPACK_IMPORTED_MODULE_5__["getExportDir"])(), contents, win); // handingTask = false;
   });
   contents.on('openFolder', function () {
-    var array = _skpm_dialog__WEBPACK_IMPORTED_MODULE_5___default.a.showOpenDialogSync({
+    var array = _skpm_dialog__WEBPACK_IMPORTED_MODULE_6___default.a.showOpenDialogSync({
       properties: ['openDirectory']
     });
 
@@ -6316,9 +6410,9 @@ var theUI = function theUI(options) {
     contents.executeJavaScript("setRedirectTo(".concat(JSON.stringify(options.redirectTo), ")"));
 
     if (options.redirectTo === '/export_metadata') {
-      contents.executeJavaScript("setExportDir(".concat(JSON.stringify(Object(_Utilities__WEBPACK_IMPORTED_MODULE_4__["getDefaultExportDir"])()), ")"));
+      contents.executeJavaScript("setExportDir(".concat(JSON.stringify(Object(_Utilities__WEBPACK_IMPORTED_MODULE_5__["getDefaultExportDir"])()), ")"));
       setTimeout(function () {
-        contents.executeJavaScript("setExportNodes(".concat(JSON.stringify(Object(_lib_ExportMetadata__WEBPACK_IMPORTED_MODULE_2__["getTargetLayers"])()), ")"));
+        contents.executeJavaScript("setExportNodes(".concat(JSON.stringify(Object(_lib_ExportMetadata__WEBPACK_IMPORTED_MODULE_3__["getTargetLayers"])()), ")"));
       }, 1000);
     }
   };
@@ -6359,8 +6453,22 @@ function hasLayers(layer) {
   return typeof layer.layers !== 'undefined' && layer.layers.length !== 0;
 }
 
-function getArtboardsSorted(page) {
-  var sort = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _Constants__WEBPACK_IMPORTED_MODULE_0__["ArtboardSortEnum"].Left2RightByArtboard;
+function checkArtboardSort(artboardSort) {
+  if (artboardSort === 'Top to Bottom') {
+    return _Constants__WEBPACK_IMPORTED_MODULE_0__["ArtboardSortEnum"].Top2BottomByLayerList;
+  } else if (artboardSort === 'Bottom to Top') {
+    return _Constants__WEBPACK_IMPORTED_MODULE_0__["ArtboardSortEnum"].Bottom2TopByLayerList;
+  } else if (artboardSort === 'Left to Right') {
+    return _Constants__WEBPACK_IMPORTED_MODULE_0__["ArtboardSortEnum"].Left2RightByArtboard;
+  } else if (artboardSort === 'Right to Left') {
+    return _Constants__WEBPACK_IMPORTED_MODULE_0__["ArtboardSortEnum"].Right2LeftByArtboard;
+  } else if (artboardSort === 'Top to Bottom 1') {
+    return _Constants__WEBPACK_IMPORTED_MODULE_0__["ArtboardSortEnum"].Top2BottomByArtboard;
+  }
+}
+
+function getArtboardsSorted(page, artboardSort) {
+  var sort = checkArtboardSort(artboardSort);
   var artboards = [];
   page.layers.slice().forEach(function (layer) {
     if (layer.type === 'Artboard') artboards.push(layer);

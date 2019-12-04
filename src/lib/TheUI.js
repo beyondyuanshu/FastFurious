@@ -1,5 +1,6 @@
 import BrowserWindow from 'sketch-module-web-view';
 import { createTableOfContents, setParentHeadingOrOverrideValue } from '../lib/CreateTableOfContents';
+import { addPageNumber } from '../lib/AddPageNumber';
 import { exportMetadata, cancelTask, getTargetLayers } from '../lib/ExportMetadata';
 import getTheme from '../../resources/views/theme/index';
 import { getDefaultExportDir, getExportDir } from './Utilities';
@@ -53,6 +54,10 @@ const theUI = options => {
 	});
 
 	win.loadURL(require('../../resources/webview.html'));
+
+	contents.on('addPageNumber', () => {
+		addPageNumber(artboardSort, contents, win);
+	});
 
 	contents.on('createTableOfContent', () => {
 		createTableOfContents(artboardSort, contents, win);

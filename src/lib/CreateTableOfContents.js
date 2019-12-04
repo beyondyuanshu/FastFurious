@@ -7,7 +7,6 @@ let ShapePath = require('sketch/dom').ShapePath;
 let UI = require('sketch/ui');
 
 import { getArtboardsSorted } from './Utilities';
-import { ArtboardSortEnum } from './Constants';
 
 let SelectedDocument = require('sketch/dom').getSelectedDocument();
 
@@ -557,20 +556,6 @@ function checkHeading(artboard) {
 	}
 }
 
-function checkArtboardSort(artboardSort) {
-	if (artboardSort === 'Top to Bottom') {
-		return ArtboardSortEnum.Top2BottomByLayerList;
-	} else if (artboardSort === 'Bottom to Top') {
-		return ArtboardSortEnum.Bottom2TopByLayerList;
-	} else if (artboardSort === 'Left to Right') {
-		return ArtboardSortEnum.Left2RightByArtboard;
-	} else if (artboardSort === 'Right to Left') {
-		return ArtboardSortEnum.Right2LeftByArtboard;
-	} else if (artboardSort === 'Top to Bottom 1') {
-		return ArtboardSortEnum.Top2BottomByArtboard;
-	}
-}
-
 function checkMasters() {
 	PageTitleMaster = Sketch.find('SymbolMaster, [name="PageTitle"]');
 	TopBannerMaster = Sketch.find('SymbolMaster, [name="TocTopBanner"]');
@@ -617,7 +602,7 @@ export function createTableOfContents(artboardSort, contents, win, isContinue = 
 		}
 
 		// 得到排序后的画板
-		Artboards = getArtboardsSorted(SelectedDocument.selectedPage, checkArtboardSort(artboardSort));
+		Artboards = getArtboardsSorted(SelectedDocument.selectedPage, artboardSort);
 		if (Artboards.length === 0) {
 			console.log('no artboards');
 			UI.alert('Error', '当前文档为空，无需要生成目录');

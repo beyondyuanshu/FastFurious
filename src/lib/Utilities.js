@@ -7,7 +7,22 @@ function hasLayers(layer) {
 	return typeof layer.layers !== 'undefined' && layer.layers.length !== 0;
 }
 
-export function getArtboardsSorted(page, sort = ArtboardSortEnum.Left2RightByArtboard) {
+function checkArtboardSort(artboardSort) {
+	if (artboardSort === 'Top to Bottom') {
+		return ArtboardSortEnum.Top2BottomByLayerList;
+	} else if (artboardSort === 'Bottom to Top') {
+		return ArtboardSortEnum.Bottom2TopByLayerList;
+	} else if (artboardSort === 'Left to Right') {
+		return ArtboardSortEnum.Left2RightByArtboard;
+	} else if (artboardSort === 'Right to Left') {
+		return ArtboardSortEnum.Right2LeftByArtboard;
+	} else if (artboardSort === 'Top to Bottom 1') {
+		return ArtboardSortEnum.Top2BottomByArtboard;
+	}
+}
+
+export function getArtboardsSorted(page, artboardSort) {
+	let sort = checkArtboardSort(artboardSort);
 	let artboards = [];
 	page.layers.slice().forEach(layer => {
 		if (layer.type === 'Artboard') artboards.push(layer);

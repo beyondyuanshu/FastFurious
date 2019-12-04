@@ -12,6 +12,16 @@
 			"script": "./commandTableOfContents.js"
 		},
 		{
+			"name": "添加页码",
+			"identifier": "fast-furious.addPageNumber",
+			"script": "./commandAddPageNumber.js"
+		},
+		{
+			"name": "删除页码",
+			"identifier": "fast-furious.clearPageNumber",
+			"script": "./commandClearPageNumber.js"
+		},
+		{
 			"name": "添加水印",
 			"identifier": "fast-furious.addWatermark",
 			"script": "./commandAddWatermark.js"
@@ -32,6 +42,10 @@
 		"title": "🚗 Fast & Furious",
 		"items": [
 			"fast-furious.tableOfContents",
+			"-",
+			"fast-furious.addPageNumber",
+			"fast-furious.clearPageNumber",
+			"-",
 			"-",
 			"fast-furious.addWatermark",
 			"fast-furious.clearWatermark",
