@@ -5293,33 +5293,70 @@ var Artboards = [];
 var ArtboardIndex = 0;
 var HeadingsMap = new Map();
 var PageTitleMaster;
-var TopBannerMaster;
 var BottomBannerMaster;
 var LastHeadingSerial = '';
 
-function addPageNumber(contentsArtboards) {
+function addPgaeNumber(artboard, value) {
+  var pageNumber = new Text({
+    parent: artboard,
+    text: '0',
+    name: 'pageNumber',
+    style: {
+      borders: [],
+      fontFamily: 'PingFang SC',
+      fontSize: 88,
+      fontWeight: 4,
+      textColor: '#FFFFFF',
+      alignment: 'right',
+      verticalAlignment: 'center'
+    },
+    frame: {
+      x: 6747,
+      y: 88,
+      width: 53,
+      height: 123
+    }
+  });
+  pageNumber.text = value;
+  Settings.setLayerSettingForKey(pageNumber, 'textType', 'pageNumber');
+}
+
+function addPageNumbers(contentsArtboards) {
   Sketch.find('Text, [name="{page}"]').forEach(function (layer) {
     layer.remove();
   });
+  Sketch.find('Text', SelectedDocument.selectedPage).forEach(function (text) {
+    if (Settings.layerSettingForKey(text, 'textType') === 'pageNumber') {
+      text.remove();
+    }
+  });
+  Artboards.forEach(function (artboard) {
+    var instances = Sketch.find('SymbolInstance', artboard);
 
-  for (var index = 0; index < Artboards.length; index++) {
-    var artboard = Artboards[index];
-    var layers = artboard.layers;
+    for (var _index = 0; _index < instances.length; _index++) {
+      var instance = instances[_index];
 
-    for (var _index = 0; _index < layers.length; _index++) {
-      var layer = layers[_index];
+      if (instance.master.name === 'Title') {
+        var titleOverride = instance.overrides[0];
 
-      if (layer.name === '{page}') {
-        layer.remove();
-        continue;
-      }
+        if (titleOverride) {
+          var value = HeadingsMap.get(titleOverride.value);
 
-      if (layer.type === 'SymbolInstance' && layer.master.name === 'PageTitle') {
-        layers[_index].overrides[0].value = HeadingsMap.get(layers[_index].overrides[1].value);
-        break;
+          if (value > 2) {
+            value += contentsArtboards.length;
+          }
+
+          addPgaeNumber(artboard, value.toString());
+          break;
+        }
       }
     }
-  }
+  });
+  var index = 3;
+  contentsArtboards.forEach(function (artboard) {
+    addPgaeNumber(artboard, index.toString());
+    ++index;
+  });
 
   if (contentsArtboards.length > 0) {
     SelectedDocument.selectedLayers.forEach(function (layer) {
@@ -5556,9 +5593,7 @@ function updateContentsPage(contentsArtboards, headingsMap) {
       value = '2.' + index.toString() + ' 目录' + number;
     }
 
-    artboard.layers[0].overrides[2].value = value;
-    artboard.layers[0].overrides[1].value = index + 3; // 约定从第 3 页开始
-
+    artboard.layers[0].overrides[0].value = value;
     contentsTitles.push(value);
   } // insert contents page in TOC
 
@@ -5630,7 +5665,7 @@ function addHeading(page, headingsMap) {
         });
         Settings.setLayerSettingForKey(artboard, 'layerType', 'TOC');
         contentsArtboards.push(artboard);
-        var topBanner = TopBannerMaster[0].createNewInstance();
+        var topBanner = PageTitleMaster.createNewInstance();
         var bottomBanner = BottomBannerMaster[0].createNewInstance();
         bottomBanner.frame.y = ContentHeight - bottomBanner.frame.height;
         topBanner.parent = artboard;
@@ -5696,33 +5731,26 @@ function addHeading(page, headingsMap) {
 
 function checkHeading(artboard) {
   // 过滤掉目录页
-  var type = Settings.layerSettingForKey(artboard, 'layerType');
+  var type = Settings.layerSettingForKey(artboard, 'layerType'); // 遍历画板所有层，找出标题层
 
-  if (type !== 'TOC') {
-    // 遍历画板所有层，找出标题层
-    var layers = artboard.layers;
+  var layers = artboard.layers;
 
-    for (var index = 0; index < layers.length; index++) {
-      var layer = layers[index];
-      if (layer.type !== 'SymbolInstance') continue; // 替换 Title 组件实例为 PageTitle 组件
+  for (var index = 0; index < layers.length; index++) {
+    var layer = layers[index];
+    if (layer.type !== 'SymbolInstance') continue;
 
-      if (layer.type === 'SymbolInstance' && layer.master.name === 'Title' && layer.frame.x === 0 && layer.frame.y === 0) {
-        var pageTitle = PageTitleMaster[0].createNewInstance();
-        pageTitle.parent = artboard;
-        pageTitle.overrides[1].value = layer.overrides[0].value;
-        layer.remove();
-      } // 处理 PageTitle
+    if (layer.master.name === 'Title') {
+      var override = layer.overrides[0];
 
-
-      if (layer.type === 'SymbolInstance' && layer.master.name === 'PageTitle') {
-        var override = layer.overrides[1]; // 优化空格
+      if (override) {
+        PageTitleMaster = layer.master; // 优化空格
 
         var value = override.value;
         value = value.trim();
         value = value.replace(/ {1,}/, ' ');
         override.value = value; // 检查是否有重复
 
-        override = layer.overrides[1]; // Fix: ?
+        override = layer.overrides[0]; // Fix: ?
 
         if (HeadingsMap.has(override.value)) {
           // 标题有重复，提示用户修正
@@ -5817,18 +5845,16 @@ function checkHeading(artboard) {
     } // 添加页码
 
 
-    setTimeout(addPageNumber.bind(null, newContentsArtboards), 5);
+    setTimeout(addPageNumbers.bind(null, newContentsArtboards), 5);
   }
 }
 
 function checkMasters() {
-  PageTitleMaster = Sketch.find('SymbolMaster, [name="PageTitle"]');
-  TopBannerMaster = Sketch.find('SymbolMaster, [name="TocTopBanner"]');
-  BottomBannerMaster = Sketch.find('SymbolMaster, [name="TocBottomBanner"]');
+  BottomBannerMaster = Sketch.find('SymbolMaster, [name="页尾"]');
 
-  if (!PageTitleMaster.length || !TopBannerMaster.length || !BottomBannerMaster.length) {
+  if (!BottomBannerMaster.length) {
     console.log('can not found the banner');
-    UI.alert('Error', '请添加生成目录所需要组件: PageTitle、TocTopBanner 、TocBottomBanner');
+    UI.alert('Error', '请添加生成目录所需要组件: 页尾');
     WebContents.executeJavaScript("showCreateTocCreate()");
     return false;
   }
@@ -5878,6 +5904,16 @@ function createTableOfContents(artboardSort, contents, win) {
       UI.alert('Error', '当前文档为空，无需要生成目录');
       WebContents.executeJavaScript("showCreateTocCreate()");
       return;
+    } // 过滤掉 TOC
+
+
+    for (var index = 0; index < Artboards.length; index++) {
+      var type = Settings.layerSettingForKey(Artboards[index], 'layerType');
+
+      if (type === 'TOC') {
+        Artboards.splice(index, 1);
+        break;
+      }
     } // 从画板中检测出标题
 
 
