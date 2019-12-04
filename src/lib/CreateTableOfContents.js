@@ -66,7 +66,7 @@ function addPageNumber(contentsArtboards) {
 	}
 
 	BrowserWindow.close();
-	Sketch.UI.message('Create Successfully! 🙌');
+	Sketch.UI.message('🙌 Successfully! 🙌');
 }
 
 function createHeading(artboard, originalX, originalY, headingLevel, headingText, pageNumber) {
@@ -239,7 +239,7 @@ function checkHeadingSerial(lastSerial, currentSerial) {
 		let firstNumber = array[0];
 		let lastNumber = array[array.length - 1];
 		array.splice(array.length - 1, 1);
-		
+
 		if (serialLength === 2) {
 			if (
 				currentSerial !== lastSerial + '.1' &&
@@ -350,6 +350,10 @@ function addHeading(page, headingsMap) {
 					y: 0,
 					width: ContentWidth,
 					height: ContentHeight,
+				},
+				background: {
+					enabled: true,
+					color: '#FBFBFB',
 				},
 			});
 			Settings.setLayerSettingForKey(artboard, 'layerType', 'TOC');

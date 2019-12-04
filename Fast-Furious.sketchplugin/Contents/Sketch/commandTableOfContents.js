@@ -5519,6 +5519,10 @@ function addHeading(page, headingsMap) {
             y: 0,
             width: ContentWidth,
             height: ContentHeight
+          },
+          background: {
+            enabled: true,
+            color: '#FBFBFB'
           }
         });
         Settings.setLayerSettingForKey(artboard, 'layerType', 'TOC');

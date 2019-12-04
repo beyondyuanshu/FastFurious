@@ -12,6 +12,16 @@
 			"script": "./commandTableOfContents.js"
 		},
 		{
+			"name": "添加水印",
+			"identifier": "fast-furious.addWatermark",
+			"script": "./commandAddWatermark.js"
+		},
+		{
+			"name": "删除水印",
+			"identifier": "fast-furious.clearWatermark",
+			"script": "./commandClearWatermark.js"
+		},
+		{
 			"name": "Export Metadata",
 			"identifier": "fast-furious.metadata",
 			"shortcut": "shift control cmd m",
@@ -20,6 +30,13 @@
 	],
 	"menu": {
 		"title": "🚗 Fast & Furious",
-		"items": ["fast-furious.tableOfContents", "fast-furious.metadata"]
+		"items": [
+			"fast-furious.tableOfContents",
+			"-",
+			"fast-furious.addWatermark",
+			"fast-furious.clearWatermark",
+			"-",
+			"fast-furious.metadata"
+		]
 	}
 }
