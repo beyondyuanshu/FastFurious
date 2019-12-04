@@ -5266,7 +5266,7 @@ function createHeading(artboard, originalX, originalY, headingLevel, headingText
   }
 
   var serialAndContent = new Text({
-    text: headingText,
+    text: headingText.trim(),
     // NOTE: list text first! text maybe change the name
     name: 'serialAndContent',
     style: {
@@ -5391,21 +5391,27 @@ function checkHeadingSerial(lastSerial, currentSerial) {
     }
   } else {
     var array = lastSerial.split('.');
-    var newArray;
+    var newArray = array;
     var secondLastNumber;
     var serialLength = array.length;
 
     if (serialLength > 2) {
-      newArray = array;
       secondLastNumber = newArray[newArray.length - 2];
       newArray.splice(newArray.length - 1, 2);
     }
 
+    var firstNumber = array[0];
     var lastNumber = array[array.length - 1];
     array.splice(array.length - 1, 1);
 
-    if (currentSerial !== lastSerial + '.1' && currentSerial !== array.join('.') + (parseInt(lastNumber) + 1) && serialLength > 2 && currentSerial !== newArray.join('.') + (parseInt(secondLastNumber) + 1)) {
-      hasError = true;
+    if (serialLength === 2) {
+      if (currentSerial !== lastSerial + '.1' && currentSerial !== firstNumber + '.' + (parseInt(lastNumber) + 1) && currentSerial !== parseInt(firstNumber) + 1 + '.') {
+        hasError = true;
+      }
+    } else {
+      if (currentSerial !== lastSerial + '.1' && currentSerial !== array.join('.') + (parseInt(lastNumber) + 1) && currentSerial !== newArray.join('.') + (parseInt(secondLastNumber) + 1)) {
+        hasError = true;
+      }
     }
   }
 
@@ -5602,7 +5608,14 @@ function checkHeading(artboard) {
 
 
       if (layer.type === 'SymbolInstance' && layer.master.name === 'PageTitle') {
-        var override = layer.overrides[1]; // 检查是否有重复
+        var override = layer.overrides[1]; // 优化空格
+
+        var value = override.value;
+        value = value.trim();
+        value = value.replace(/ {1,}/, ' ');
+        override.value = value; // 检查是否有重复
+
+        override = layer.overrides[1]; // Fix: ?
 
         if (HeadingsMap.has(override.value)) {
           // 标题有重复，提示用户修正

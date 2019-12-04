@@ -101,7 +101,7 @@ function createHeading(artboard, originalX, originalY, headingLevel, headingText
 		groupHeight = serialAndContentHeight;
 	}
 	let serialAndContent = new Text({
-		text: headingText, // NOTE: list text first! text maybe change the name
+		text: headingText.trim(), // NOTE: list text first! text maybe change the name
 		name: 'serialAndContent',
 		style: {
 			borders: [],
@@ -229,23 +229,33 @@ function checkHeadingSerial(lastSerial, currentSerial) {
 	} else {
 		let array = lastSerial.split('.');
 
-		let newArray;
+		let newArray = array;
 		let secondLastNumber;
 		let serialLength = array.length;
 		if (serialLength > 2) {
-			newArray = array;
 			secondLastNumber = newArray[newArray.length - 2];
 			newArray.splice(newArray.length - 1, 2);
 		}
-
+		let firstNumber = array[0];
 		let lastNumber = array[array.length - 1];
 		array.splice(array.length - 1, 1);
-		if (
-			currentSerial !== lastSerial + '.1' &&
-			currentSerial !== array.join('.') + (parseInt(lastNumber) + 1) &&
-			(serialLength > 2 && currentSerial !== newArray.join('.') + (parseInt(secondLastNumber) + 1))
-		) {
-			hasError = true;
+		
+		if (serialLength === 2) {
+			if (
+				currentSerial !== lastSerial + '.1' &&
+				currentSerial !== firstNumber + '.' + (parseInt(lastNumber) + 1) &&
+				currentSerial !== parseInt(firstNumber) + 1 + '.'
+			) {
+				hasError = true;
+			}
+		} else {
+			if (
+				currentSerial !== lastSerial + '.1' &&
+				currentSerial !== array.join('.') + (parseInt(lastNumber) + 1) &&
+				currentSerial !== newArray.join('.') + (parseInt(secondLastNumber) + 1)
+			) {
+				hasError = true;
+			}
 		}
 	}
 
@@ -418,9 +428,16 @@ function checkHeading(artboard) {
 
 			// 处理 PageTitle
 			if (layer.type === 'SymbolInstance' && layer.master.name === 'PageTitle') {
-				const override = layer.overrides[1];
+				let override = layer.overrides[1];
+
+				// 优化空格
+				let value = override.value;
+				value = value.trim();
+				value = value.replace(/ {1,}/, ' ');
+				override.value = value;
 
 				// 检查是否有重复
+				override = layer.overrides[1]; // Fix: ?
 				if (HeadingsMap.has(override.value)) {
 					// 标题有重复，提示用户修正
 					console.log('same heading:', override.value);
