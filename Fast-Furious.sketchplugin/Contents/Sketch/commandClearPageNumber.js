@@ -109,13 +109,16 @@ var UI = __webpack_require__(/*! sketch/ui */ "sketch/ui");
 var SelectedDocument = __webpack_require__(/*! sketch/dom */ "sketch/dom").getSelectedDocument();
 
 /* harmony default export */ __webpack_exports__["default"] = (function () {
+  Sketch.find('Text, [name="{page}"]').forEach(function (layer) {
+    layer.remove();
+  });
   var texts = Sketch.find('Text', SelectedDocument.selectedPage);
   texts.forEach(function (text) {
     if (Settings.layerSettingForKey(text, 'textType') === 'pageNumber') {
       text.remove();
     }
   });
-  Sketch.UI.message('🙌 Successfully! 🙌');
+  Sketch.UI.message('Successfully! 🙌');
 });
 
 /***/ }),

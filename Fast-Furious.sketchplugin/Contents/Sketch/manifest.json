@@ -53,7 +53,7 @@
       "fast-furious.metadata"
     ]
   },
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "Our team special plugin",
   "name": "Fast-Furious",
   "disableCocoaScriptPreprocessor": true,

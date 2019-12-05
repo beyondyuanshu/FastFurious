@@ -111,7 +111,7 @@ var SelectedDocument = __webpack_require__(/*! sketch/dom */ "sketch/dom").getSe
 
   if (!watermarkMaster.length) {
     console.log('can not found the watermark master');
-    UI.alert('Error', '请添加水印组件');
+    UI.alert('Error', '请添加组件:水印');
   } else {
     var watermarks = Sketch.find('SymbolInstance, [name="水印"]', SelectedDocument.selectedPage);
     watermarks.forEach(function (watermark) {
@@ -128,7 +128,7 @@ var SelectedDocument = __webpack_require__(/*! sketch/dom */ "sketch/dom").getSe
       };
       watermark.parent = artboard;
     });
-    Sketch.UI.message('🙌 Successfully! 🙌');
+    Sketch.UI.message('Successfully! 🙌');
   }
 });
 

@@ -51,7 +51,7 @@ function handleArtboard(artboard) {
 
 	if (ArtboardIndex === Artboards.length - 1) {
 		BrowserWindow.close();
-		Sketch.UI.message('🙌 Successfully! 🙌');
+		Sketch.UI.message('Successfully! 🙌');
 	} else {
 		++ArtboardIndex;
 		setTimeout(handleArtboard.bind(null, Artboards[ArtboardIndex]), 20);

@@ -78899,7 +78899,12 @@ function HintPage(props) {
     margin: "normal",
     variant: "outlined",
     onChange: handleChange('content'),
-    autoFocus: "ture"
+    autoFocus: "true",
+    onKeyPressCapture: function onKeyPressCapture(e) {
+      if (e.key === 'Enter') {
+        handleContinue();
+      }
+    }
   }))), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_material_ui_core_Typography__WEBPACK_IMPORTED_MODULE_2__["default"], {
     style: {
       height: '50px'
@@ -79117,7 +79122,19 @@ function CreateTableOfContent() {
   }),
       _React$useState2 = _slicedToArray(_React$useState, 2),
       state = _React$useState2[0],
-      setState = _React$useState2[1];
+      setState = _React$useState2[1]; // useEffect(() => {
+  // 	const listener = event => {
+  // 		if (event.code === 'Enter' || event.code === 'NumpadEnter') {
+  // 			console.log('Enter key was pressed. Run your function.');
+  // 			// callMyFunction();
+  // 		}
+  // 	};
+  // 	document.addEventListener('keydown', listener);
+  // 	return () => {
+  // 		document.removeEventListener('keydown', listener);
+  // 	};
+  // }, []);
+
 
   var hideHinting = function hideHinting() {
     setState(_objectSpread({}, state, {

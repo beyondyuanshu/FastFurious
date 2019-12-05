@@ -7,7 +7,7 @@ export default function() {
 	let watermarkMaster = Sketch.find('SymbolMaster, [name="水印"]');
 	if (!watermarkMaster.length) {
 		console.log('can not found the watermark master');
-		UI.alert('Error', '请添加水印组件');
+		UI.alert('Error', '请添加组件:水印');
 	} else {
 		let watermarks = Sketch.find('SymbolInstance, [name="水印"]', SelectedDocument.selectedPage);
 		watermarks.forEach(watermark => {
@@ -21,6 +21,6 @@ export default function() {
 			watermark.parent = artboard;
 		});
 
-		Sketch.UI.message('🙌 Successfully! 🙌');
+		Sketch.UI.message('Successfully! 🙌');
 	}
 }

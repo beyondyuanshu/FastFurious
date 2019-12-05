@@ -111,7 +111,7 @@ var SelectedDocument = __webpack_require__(/*! sketch/dom */ "sketch/dom").getSe
   watermarks.forEach(function (watermark) {
     watermark.remove();
   });
-  Sketch.UI.message('🙌 Successfully! 🙌');
+  Sketch.UI.message('Successfully! 🙌');
 });
 
 /***/ }),

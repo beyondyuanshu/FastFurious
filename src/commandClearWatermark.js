@@ -9,5 +9,5 @@ export default function() {
 		watermark.remove();
 	});
 
-	Sketch.UI.message('🙌 Successfully! 🙌');
+	Sketch.UI.message('Successfully! 🙌');
 }

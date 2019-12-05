@@ -79,7 +79,12 @@ export default function HintPage(props) {
 							margin="normal"
 							variant="outlined"
 							onChange={handleChange('content')}
-							autoFocus="ture"
+							autoFocus="true"
+							onKeyPressCapture={e => {
+								if (e.key === 'Enter') {
+									handleContinue();
+								}
+							}}
 						/>
 					</Grid>
 				</Grid>

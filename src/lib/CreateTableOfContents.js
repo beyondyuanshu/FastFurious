@@ -102,7 +102,7 @@ function addPageNumbers(contentsArtboards) {
 	}
 
 	BrowserWindow.close();
-	Sketch.UI.message('🙌 Successfully! 🙌');
+	Sketch.UI.message('Successfully! 🙌');
 }
 
 function createHeading(artboard, originalX, originalY, headingLevel, headingText, pageNumber) {
@@ -415,7 +415,7 @@ function addHeading(page, headingsMap) {
 		// create headings
 		let originalX = GroupLeftAndRightMargin + GroupWidth * column + GroupSpacing * column;
 		if (!needAddNewArtboard) {
-			if (lastLevel === 1 && currentLevel === 1) {
+			if (currentLevel === 1) {
 				originalY += 100;
 			} else {
 				originalY += 46;
@@ -584,7 +584,7 @@ function checkMasters() {
 	BottomBannerMaster = Sketch.find('SymbolMaster, [name="页尾"]');
 	if (!BottomBannerMaster.length) {
 		console.log('can not found the banner');
-		UI.alert('Error', '请添加生成目录所需要组件: 页尾');
+		UI.alert('Error', '请添加生成目录所需要组件:页尾');
 		WebContents.executeJavaScript(`showCreateTocCreate()`);
 		return false;
 	}
