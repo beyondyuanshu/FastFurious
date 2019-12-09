@@ -2,6 +2,7 @@ import React from 'react';
 import { MuiThemeProvider, createMuiTheme } from '@material-ui/core/styles';
 import { Route, Switch } from 'react-router-dom';
 import CreateTableOfContent from './components/createTableOfContent';
+import ResetParentHeading from './components/resetParentHeading';
 import AddPageNumber from './components/addPageNumber';
 import ExportMetadata from './components/exportMetadata';
 
@@ -28,6 +29,7 @@ export default () => {
 			<div id="mainContent">
 				<Switch>
 					<Route exact path="/create_toc" component={CreateTableOfContent} />
+					<Route exact path="/reset_parentHeading" component={ResetParentHeading} />
 					<Route exact path="/add_pageNumber" component={AddPageNumber} />
 					<Route exact path="/export_metadata" component={ExportMetadata} />
 				</Switch>

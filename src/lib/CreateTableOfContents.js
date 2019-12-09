@@ -55,6 +55,7 @@ function addPgaeNumber(artboard, value) {
 		},
 	});
 	pageNumber.text = value;
+	pageNumber.name = 'pageNumber';
 	Settings.setLayerSettingForKey(pageNumber, 'textType', 'pageNumber');
 }
 

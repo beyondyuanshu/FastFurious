@@ -5318,6 +5318,7 @@ function addPgaeNumber(artboard, value) {
     }
   });
   pageNumber.text = value;
+  pageNumber.name = 'pageNumber';
   Settings.setLayerSettingForKey(pageNumber, 'textType', 'pageNumber');
 }
 
@@ -6337,6 +6338,38 @@ function exportMetadata(exportPath, contents, win) {
 
 /***/ }),
 
+/***/ "./src/lib/ResetParentHeading.js":
+/*!***************************************!*\
+  !*** ./src/lib/ResetParentHeading.js ***!
+  \***************************************/
+/*! exports provided: resetParentHeading */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "resetParentHeading", function() { return resetParentHeading; });
+var Sketch = __webpack_require__(/*! sketch */ "sketch");
+
+var Settings = __webpack_require__(/*! sketch/settings */ "sketch/settings");
+
+var SelectedDocument = __webpack_require__(/*! sketch/dom */ "sketch/dom").getSelectedDocument();
+
+var BrowserWindow = null;
+var WebContents = null;
+function resetParentHeading(heading, contents, win) {
+  BrowserWindow = win;
+  WebContents = contents;
+  var selection = SelectedDocument.selectedLayers;
+  var selectionLayers = selection.layers;
+
+  if (selectionLayers.length === 1 && selectionLayers[0].type === 'Artboard') {
+    var artboard = selectionLayers[0];
+    Settings.setLayerSettingForKey(artboard, 'parentHeading', heading);
+  }
+}
+
+/***/ }),
+
 /***/ "./src/lib/TheUI.js":
 /*!**************************!*\
   !*** ./src/lib/TheUI.js ***!
@@ -6349,12 +6382,14 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var sketch_module_web_view__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! sketch-module-web-view */ "./node_modules/sketch-module-web-view/lib/index.js");
 /* harmony import */ var sketch_module_web_view__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(sketch_module_web_view__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var _lib_CreateTableOfContents__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../lib/CreateTableOfContents */ "./src/lib/CreateTableOfContents.js");
-/* harmony import */ var _lib_AddPageNumber__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../lib/AddPageNumber */ "./src/lib/AddPageNumber.js");
-/* harmony import */ var _lib_ExportMetadata__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../lib/ExportMetadata */ "./src/lib/ExportMetadata.js");
-/* harmony import */ var _resources_views_theme_index__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../../resources/views/theme/index */ "./resources/views/theme/index.js");
-/* harmony import */ var _Utilities__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./Utilities */ "./src/lib/Utilities.js");
-/* harmony import */ var _skpm_dialog__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! @skpm/dialog */ "./node_modules/@skpm/dialog/lib/index.js");
-/* harmony import */ var _skpm_dialog__WEBPACK_IMPORTED_MODULE_6___default = /*#__PURE__*/__webpack_require__.n(_skpm_dialog__WEBPACK_IMPORTED_MODULE_6__);
+/* harmony import */ var _lib_ResetParentHeading__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../lib/ResetParentHeading */ "./src/lib/ResetParentHeading.js");
+/* harmony import */ var _lib_AddPageNumber__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../lib/AddPageNumber */ "./src/lib/AddPageNumber.js");
+/* harmony import */ var _lib_ExportMetadata__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../lib/ExportMetadata */ "./src/lib/ExportMetadata.js");
+/* harmony import */ var _resources_views_theme_index__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../../resources/views/theme/index */ "./resources/views/theme/index.js");
+/* harmony import */ var _Utilities__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./Utilities */ "./src/lib/Utilities.js");
+/* harmony import */ var _skpm_dialog__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! @skpm/dialog */ "./node_modules/@skpm/dialog/lib/index.js");
+/* harmony import */ var _skpm_dialog__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(_skpm_dialog__WEBPACK_IMPORTED_MODULE_7__);
+
 
 
 
@@ -6366,7 +6401,7 @@ var handingTask = false;
 
 var theUI = function theUI(options) {
   var themeColor = typeof MSTheme !== 'undefined' && MSTheme.sharedTheme().isDark() ? 'dark' : 'light';
-  var theme = Object(_resources_views_theme_index__WEBPACK_IMPORTED_MODULE_4__["default"])(themeColor);
+  var theme = Object(_resources_views_theme_index__WEBPACK_IMPORTED_MODULE_5__["default"])(themeColor);
   var winOptions = {
     identifier: options.identifier,
     title: options.title,
@@ -6397,7 +6432,7 @@ var theUI = function theUI(options) {
       contents.executeJavaScript("showExportAlert()");
     } else {
       if (handingTask) {
-        Object(_lib_ExportMetadata__WEBPACK_IMPORTED_MODULE_3__["cancelTask"])();
+        Object(_lib_ExportMetadata__WEBPACK_IMPORTED_MODULE_4__["cancelTask"])();
       } else {
         win.setClosable(true);
         win.close();
@@ -6405,9 +6440,6 @@ var theUI = function theUI(options) {
     }
   });
   win.loadURL(__webpack_require__(/*! ../../resources/webview.html */ "./resources/webview.html"));
-  contents.on('addPageNumber', function () {
-    Object(_lib_AddPageNumber__WEBPACK_IMPORTED_MODULE_2__["addPageNumber"])(artboardSort, contents, win);
-  });
   contents.on('createTableOfContent', function () {
     Object(_lib_CreateTableOfContents__WEBPACK_IMPORTED_MODULE_1__["createTableOfContents"])(artboardSort, contents, win);
   });
@@ -6415,13 +6447,23 @@ var theUI = function theUI(options) {
     Object(_lib_CreateTableOfContents__WEBPACK_IMPORTED_MODULE_1__["setParentHeadingOrOverrideValue"])(value);
     Object(_lib_CreateTableOfContents__WEBPACK_IMPORTED_MODULE_1__["createTableOfContents"])(artboardSort, contents, win, true);
   });
+  contents.on('resetParentHeadingApply', function (heading) {
+    Object(_lib_ResetParentHeading__WEBPACK_IMPORTED_MODULE_2__["resetParentHeading"])(heading, contents, win);
+  });
+  contents.on('resetParentHeadingOK', function (heading) {
+    Object(_lib_ResetParentHeading__WEBPACK_IMPORTED_MODULE_2__["resetParentHeading"])(heading, contents, win);
+    win.close();
+  });
+  contents.on('addPageNumber', function () {
+    Object(_lib_AddPageNumber__WEBPACK_IMPORTED_MODULE_3__["addPageNumber"])(artboardSort, contents, win);
+  });
   contents.on('exportMetadata', function (path) {
     handingTask = true;
     win.setClosable(false);
-    Object(_lib_ExportMetadata__WEBPACK_IMPORTED_MODULE_3__["exportMetadata"])(path + '/' + Object(_Utilities__WEBPACK_IMPORTED_MODULE_5__["getExportDir"])(), contents, win); // handingTask = false;
+    Object(_lib_ExportMetadata__WEBPACK_IMPORTED_MODULE_4__["exportMetadata"])(path + '/' + Object(_Utilities__WEBPACK_IMPORTED_MODULE_6__["getExportDir"])(), contents, win); // handingTask = false;
   });
   contents.on('openFolder', function () {
-    var array = _skpm_dialog__WEBPACK_IMPORTED_MODULE_6___default.a.showOpenDialogSync({
+    var array = _skpm_dialog__WEBPACK_IMPORTED_MODULE_7___default.a.showOpenDialogSync({
       properties: ['openDirectory']
     });
 
@@ -6446,9 +6488,9 @@ var theUI = function theUI(options) {
     contents.executeJavaScript("setRedirectTo(".concat(JSON.stringify(options.redirectTo), ")"));
 
     if (options.redirectTo === '/export_metadata') {
-      contents.executeJavaScript("setExportDir(".concat(JSON.stringify(Object(_Utilities__WEBPACK_IMPORTED_MODULE_5__["getDefaultExportDir"])()), ")"));
+      contents.executeJavaScript("setExportDir(".concat(JSON.stringify(Object(_Utilities__WEBPACK_IMPORTED_MODULE_6__["getDefaultExportDir"])()), ")"));
       setTimeout(function () {
-        contents.executeJavaScript("setExportNodes(".concat(JSON.stringify(Object(_lib_ExportMetadata__WEBPACK_IMPORTED_MODULE_3__["getTargetLayers"])()), ")"));
+        contents.executeJavaScript("setExportNodes(".concat(JSON.stringify(Object(_lib_ExportMetadata__WEBPACK_IMPORTED_MODULE_4__["getTargetLayers"])()), ")"));
       }, 1000);
     }
   };

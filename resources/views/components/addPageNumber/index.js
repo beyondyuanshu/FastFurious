@@ -28,7 +28,7 @@ const useStyles = makeStyles(theme => ({
 	},
 }));
 
-function CreateTableOfContent() {
+function AddPageNumber() {
 	const classes = useStyles();
 
 	window.showCreateTocCreate = function() {
@@ -121,4 +121,4 @@ function CreateTableOfContent() {
 	);
 }
 
-export default CreateTableOfContent;
+export default AddPageNumber;

@@ -12,6 +12,17 @@
 			"script": "./commandTableOfContents.js"
 		},
 		{
+			"name": "设置父级标题",
+			"identifier": "fast-furious.resetParentHeading",
+			"script": "./commandResetParentHeading.js",
+			"handlers": {
+				"actions": {
+					"SelectionChanged": "onSelectedChanged"
+				},
+				"run": "showUI"
+			}
+		},
+		{
 			"name": "添加页码",
 			"identifier": "fast-furious.addPageNumber",
 			"script": "./commandAddPageNumber.js"
@@ -42,6 +53,7 @@
 		"title": "🚗 Fast & Furious",
 		"items": [
 			"fast-furious.tableOfContents",
+			"fast-furious.resetParentHeading",
 			"-",
 			"fast-furious.addPageNumber",
 			"fast-furious.clearPageNumber",

@@ -86,7 +86,7 @@ var exports =
 /******/
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = "./src/commandAddPageNumber.js");
+/******/ 	return __webpack_require__(__webpack_require__.s = "./src/commandResetParentHeading.js");
 /******/ })
 /************************************************************************/
 /******/ ({
@@ -5081,27 +5081,83 @@ module.exports = "file://" + String(context.scriptPath).split(".sketchplugin/Con
 
 /***/ }),
 
-/***/ "./src/commandAddPageNumber.js":
-/*!*************************************!*\
-  !*** ./src/commandAddPageNumber.js ***!
-  \*************************************/
-/*! exports provided: default */
+/***/ "./src/commandResetParentHeading.js":
+/*!******************************************!*\
+  !*** ./src/commandResetParentHeading.js ***!
+  \******************************************/
+/*! exports provided: checkSelectedParentHeading, onSelectedChanged, showUI */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "checkSelectedParentHeading", function() { return checkSelectedParentHeading; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "onSelectedChanged", function() { return onSelectedChanged; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "showUI", function() { return showUI; });
 /* harmony import */ var _lib_TheUI__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./lib/TheUI */ "./src/lib/TheUI.js");
+/* harmony import */ var sketch_module_web_view__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! sketch-module-web-view */ "./node_modules/sketch-module-web-view/lib/index.js");
+/* harmony import */ var sketch_module_web_view__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(sketch_module_web_view__WEBPACK_IMPORTED_MODULE_1__);
 
-/* harmony default export */ __webpack_exports__["default"] = (function () {
+
+var Settings = __webpack_require__(/*! sketch/settings */ "sketch/settings");
+
+
+
+var SelectedDocument = __webpack_require__(/*! sketch/dom */ "sketch/dom").getSelectedDocument();
+
+function checkSelectedParentHeading() {
+  var win = sketch_module_web_view__WEBPACK_IMPORTED_MODULE_1___default.a.fromId('resetParentHeading.ui');
+
+  if (!win) {
+    return;
+  }
+
+  var selection = SelectedDocument.selectedLayers;
+  var selectionLayers = selection.layers;
+
+  if (selectionLayers.length === 1 && selectionLayers[0].type === 'Artboard') {
+    var artboard = selectionLayers[0];
+    var layers = artboard.layers;
+
+    for (var index = 0; index < layers.length; index++) {
+      var layer = layers[index];
+      if (layer.type !== 'SymbolInstance') continue;
+
+      if (layer.master.name === 'Title') {
+        var override = layer.overrides[0];
+
+        if (override) {
+          var parentHeading = Settings.layerSettingForKey(artboard, 'parentHeading');
+
+          if (!parentHeading) {
+            parentHeading = '';
+          }
+
+          win.webContents.executeJavaScript("resetParentHeading(1, ".concat(JSON.stringify(parentHeading), ")"));
+          return true;
+        }
+      }
+    }
+  }
+
+  win.webContents.executeJavaScript("resetParentHeading(0, ".concat(JSON.stringify(''), ")"));
+  return false;
+}
+function onSelectedChanged(context) {
+  checkSelectedParentHeading();
+}
+function showUI() {
   var options = {
-    identifier: 'addPageNumber.ui',
-    title: '添加页码',
-    redirectTo: '/add_pageNumber',
+    identifier: 'resetParentHeading.ui',
+    title: '设置父级标题',
+    redirectTo: '/reset_parentHeading',
     width: 600,
     height: 310
   };
   Object(_lib_TheUI__WEBPACK_IMPORTED_MODULE_0__["default"])(options);
-});
+  setTimeout(checkSelectedParentHeading.bind(null), 1000);
+  setTimeout(checkSelectedParentHeading.bind(null), 2000);
+  setTimeout(checkSelectedParentHeading.bind(null), 3000);
+}
 
 /***/ }),
 
@@ -6791,6 +6847,8 @@ module.exports = require("stream");
     exports[key](context);
   }
 }
+globalThis['onSelectedChanged'] = __skpm_run.bind(this, 'onSelectedChanged');
+globalThis['showUI'] = __skpm_run.bind(this, 'showUI');
 globalThis['onRun'] = __skpm_run.bind(this, 'default')
 
-//# sourceMappingURL=commandAddPageNumber.js.map
+//# sourceMappingURL=commandResetParentHeading.js.map
