@@ -39,6 +39,8 @@ export function checkSelectedParentHeading() {
 }
 
 export function onSelectedChanged(context) {
+	// var path = context.plugin.urlForResourceNamed('handlepdf.py').path();
+	// console.log('path:', path);
 	checkSelectedParentHeading();
 }
 

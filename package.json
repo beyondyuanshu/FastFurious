@@ -64,7 +64,6 @@
 		"@skpm/timers": "^0.2.1",
 		"async-json-parser": "0.0.5",
 		"bfj": "^7.0.1",
-		"material-ui-image": "^3.2.2",
 		"mixpanel-browser": "^2.30.1",
 		"moment": "^2.24.0",
 		"react": "^16.9.0",

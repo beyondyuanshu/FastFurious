@@ -12,7 +12,7 @@
       "script": "commandTableOfContents.js"
     },
     {
-      "name": "设置父级标题",
+      "name": "父级标题",
       "identifier": "fast-furious.resetParentHeading",
       "script": "commandResetParentHeading.js",
       "handlers": {
@@ -21,6 +21,11 @@
         },
         "run": "showUI"
       }
+    },
+    {
+      "name": "添加大纲",
+      "identifier": "fast-furious.exportPDF",
+      "script": "commandExportPDF.js"
     },
     {
       "name": "添加页码",
@@ -55,6 +60,8 @@
       "fast-furious.tableOfContents",
       "fast-furious.resetParentHeading",
       "-",
+      "fast-furious.exportPDF",
+      "-",
       "fast-furious.addPageNumber",
       "fast-furious.clearPageNumber",
       "-",
@@ -65,7 +72,7 @@
       "fast-furious.metadata"
     ]
   },
-  "version": "1.2.4",
+  "version": "1.2.6",
   "description": "Our team special plugin",
   "name": "Fast-Furious",
   "disableCocoaScriptPreprocessor": true,
