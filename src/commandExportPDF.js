@@ -73,10 +73,11 @@ export default function(context) {
 		let file = files[0];
 		let outlineDict = getOutline();
 
-		let cmd = `/usr/local/bin/python '${path}' '${file}' '${outlineDict}'`;
+		let cmd = `python '${path}' '${file}' '${outlineDict}'`;
 		exec(cmd, (error, stdout, stderr) => {
 			if (error) {
 				console.error(`exec error: ${error}`);
+				UI.alert('Error', error);
 				return;
 			}
 

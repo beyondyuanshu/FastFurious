@@ -2355,10 +2355,11 @@ function getOutline() {
     var path = context.plugin.urlForResourceNamed('handlepdf.py').path();
     var file = files[0];
     var outlineDict = getOutline();
-    var cmd = "/usr/local/bin/python '".concat(path, "' '").concat(file, "' '").concat(outlineDict, "'");
+    var cmd = "python '".concat(path, "' '").concat(file, "' '").concat(outlineDict, "'");
     exec(cmd, function (error, stdout, stderr) {
       if (error) {
         console.error("exec error: ".concat(error));
+        UI.alert('Error', error);
         return;
       }
 
