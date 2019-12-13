@@ -6616,51 +6616,27 @@ function getArtboardsSorted(page, artboardSort) {
     return artboards;
   } else if (sort === _Constants__WEBPACK_IMPORTED_MODULE_0__["ArtboardSortEnum"].Left2RightByArtboard) {
     return artboards.sort(function (a, b) {
-      if (a.frame.y < b.frame.y) {
-        return -1;
-      } else if (a.frame.y > b.frame.y) {
-        return 1;
+      if (a.frame.y > b.frame.y + b.frame.height / 2) {
+        return a.frame.y - b.frame.y + b.frame.height / 2;
       }
 
-      if (a.frame.x < b.frame.x) {
-        return -1;
-      } else if (a.frame.x > b.frame.x) {
-        return 1;
-      }
-
-      return 0;
+      return a.frame.x - b.frame.x;
     });
   } else if (sort === _Constants__WEBPACK_IMPORTED_MODULE_0__["ArtboardSortEnum"].Right2LeftByArtboard) {
     return artboards.sort(function (a, b) {
-      if (a.frame.y < b.frame.y) {
-        return -1;
-      } else if (a.frame.y > b.frame.y) {
-        return 1;
+      if (a.frame.y > b.frame.y + b.frame.height / 2) {
+        return a.frame.y - b.frame.y + b.frame.height / 2;
       }
 
-      if (a.frame.x > b.frame.x) {
-        return -1;
-      } else if (a.frame.x < b.frame.x) {
-        return 1;
-      }
-
-      return 0;
+      return b.frame.x - a.frame.x;
     });
   } else if (sort === _Constants__WEBPACK_IMPORTED_MODULE_0__["ArtboardSortEnum"].Top2BottomByArtboard) {
     return artboards.sort(function (a, b) {
-      if (a.frame.x < b.frame.x) {
-        return -1;
-      } else if (a.frame.x > b.frame.x) {
-        return 1;
+      if (a.frame.x > b.frame.x + b.frame.width / 2) {
+        return a.frame.x - b.frame.x + b.frame.width / 2;
       }
 
-      if (a.frame.y < b.frame.y) {
-        return -1;
-      } else if (a.frame.y > b.frame.y) {
-        return 1;
-      }
-
-      return 0;
+      return a.frame.y - b.frame.y;
     });
   } else {
     return undefined;

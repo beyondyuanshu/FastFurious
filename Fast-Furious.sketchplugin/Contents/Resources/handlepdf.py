@@ -27,7 +27,7 @@ if len(args) >= 2:
     # add links/bookmarks
     if pageNums >= 3:
         output.addBookmark(u'封面', 0)
-        output.addBookmark(u"1.历史记录", 1)
+        output.addBookmark(u"1.更新记录", 1)
         parent = output.addBookmark(u"2.目录", 2)
         for content in contents:
             # output.addLink(2, int(content[1]), content[2])
