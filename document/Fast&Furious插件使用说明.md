@@ -32,7 +32,7 @@
 
 ## 添加大纲
 
-* 打开“终端”应用，执行以下命令
+* 打开“终端”应用，执行以下命令**（需要按提示输入本机密码）**
 
   ```shell
   sudo easy_install pip && pip install pypdf2
