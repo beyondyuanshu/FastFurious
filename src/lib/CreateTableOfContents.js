@@ -10,6 +10,7 @@ import { getArtboardsSorted } from './Utilities';
 
 let SelectedDocument = require('sketch/dom').getSelectedDocument();
 
+let CheckSerial = false;
 let BrowserWindow = null;
 let WebContents = null;
 
@@ -249,11 +250,48 @@ function createHeading(artboard, originalX, originalY, headingLevel, headingText
 	return group;
 }
 
+function getCorrectSerial(lastSerial, currentSerial) {
+	if (lastSerial.endsWith('.')) {
+		lastSerial = lastSerial.slice(-1);
+	}
+	if (currentSerial.endsWith('.')) {
+		currentSerial = currentSerial.slice(-1);
+	}
+
+	let correct = '';
+	if (lastSerial === '') {
+		correct = '1.';
+	} else {
+		let lastSerialList = lastSerial.split('.');
+		let currentSerialList = currentSerial.split('.');
+
+		let lastSerialLastNumber = lastSerialList[lastSerialList.length - 1];
+		let currentSerialLastNumber = currentSerialList[currentSerialList.length - 1];
+
+		let lastLevel = lastSerialList.length;
+		let currentLevel = currentSerialList.length;
+		if (lastLevel === currentLevel) {
+			let list = lastSerial.slice(0, -2);
+			correct = list.concat(lastSerialLastNumber + 1);
+		} else if (lastLevel < currentLevel) {
+			if (currentLevel - lastLevel === 1) {
+			}
+		}
+	}
+
+	return correct;
+}
+
 function checkHeadingSerial(lastSerial, currentSerial) {
+	if (!CheckSerial) {
+		return true;
+	}
+
 	let hasError = false;
 	if (lastSerial.length === 0) {
 		if (currentSerial !== '1.') {
 			hasError = true;
+			correct = '1.';
 		}
 	} else if (lastSerial.endsWith('.')) {
 		let tempLastSerial = lastSerial;
@@ -262,6 +300,11 @@ function checkHeadingSerial(lastSerial, currentSerial) {
 		}
 		if (currentSerial !== tempLastSerial + '1' && currentSerial !== parseInt(tempLastSerial) + 1 + '.') {
 			hasError = true;
+			if (currentSerial.endsWith('.')) {
+				correct = parseInt(tempLastSerial) + 1 + '.';
+			} else {
+				correct = tempLastSerial + '1';
+			}
 		}
 	} else {
 		let array = lastSerial.split('.');
@@ -492,6 +535,9 @@ function checkHeading(artboard) {
 
 					return false;
 				} else {
+					// 标题格式正确，修正当前标题
+					// TODO
+
 					// 标题格式正确，判断是否需要提示指定父级标题
 					let currentSerial = override.value.split(' ')[0];
 					if (currentSerial.endsWith('1') && !currentSerial.startsWith(LastHeadingSerial)) {
@@ -609,8 +655,9 @@ function checkSelectedPage() {
 	return true;
 }
 
-export function createTableOfContents(artboardSort, contents, win, isContinue = false) {
+export function createTableOfContents(artboardSort, checkSerial, contents, win, isContinue = false) {
 	if (!isContinue) {
+		CheckSerial = checkSerial;
 		BrowserWindow = win;
 		WebContents = contents;
 

@@ -28,6 +28,7 @@ const theUI = options => {
 	};
 
 	let artboardSort = '';
+	let checkSerial = false;
 
 	let win = new BrowserWindow(winOptions);
 	const contents = win.webContents;
@@ -57,12 +58,12 @@ const theUI = options => {
 	win.loadURL(require('../../resources/webview.html'));
 
 	contents.on('createTableOfContent', () => {
-		createTableOfContents(artboardSort, contents, win);
+		createTableOfContents(artboardSort, checkSerial, contents, win);
 	});
 
 	contents.on('createContinue', value => {
 		setParentHeadingOrOverrideValue(value);
-		createTableOfContents(artboardSort, contents, win, true);
+		createTableOfContents(artboardSort, checkSerial, contents, win, true);
 	});
 
 	contents.on('resetParentHeadingApply', function(heading) {
@@ -97,6 +98,10 @@ const theUI = options => {
 
 	contents.on('artboardSort', function(s) {
 		artboardSort = s;
+	});
+
+	contents.on('checkSerial', function(s) {
+		checkSerial = s;
 	});
 
 	contents.on('artboardInnerLayersSort', function(s) {

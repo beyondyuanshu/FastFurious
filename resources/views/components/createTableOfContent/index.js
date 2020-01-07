@@ -5,6 +5,8 @@ import NativeSelect from '@material-ui/core/NativeSelect';
 import Typography from '@material-ui/core/Typography';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import Container from '@material-ui/core/Container';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
+import Checkbox from '@material-ui/core/Checkbox';
 import Grid from '@material-ui/core/Grid';
 import Button from '@material-ui/core/Button';
 import ProgressPage from './ProgressPage';
@@ -57,6 +59,7 @@ function CreateTableOfContent() {
 		hinting: false,
 		hintTitle: '',
 		hintContent: '',
+		checkSerial: false,
 	});
 
 	// useEffect(() => {
@@ -102,6 +105,15 @@ function CreateTableOfContent() {
 		}, 50);
 	};
 
+	const handleCheckChanged = event => {
+		setState({
+			...state,
+			checkSerial: event.target.checked,
+		});
+
+		window.postMessage('checkSerial', event.target.checked);
+	};
+
 	return (
 		<div className={classes.root}>
 			<CssBaseline />
@@ -133,6 +145,22 @@ function CreateTableOfContent() {
 									</optgroup>
 								</NativeSelect>
 							</FormControl>
+						</Grid>
+					</Grid>
+					<Grid container spacing={2} alignItems="flex-end" justify="center">
+						<Grid item>
+							<FormControlLabel
+								control={
+									<Checkbox
+										checked={state.checkSerial}
+										onChange={handleCheckChanged}
+										value="secondary"
+										color="primary"
+										inputProps={{ 'aria-label': 'secondary checkbox' }}
+									/>
+								}
+								label="检测标题序号"
+							/>
 						</Grid>
 					</Grid>
 					<Typography style={{ height: '50px' }} />
