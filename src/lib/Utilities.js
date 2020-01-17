@@ -34,24 +34,36 @@ export function getArtboardsSorted(page, artboardSort) {
 		return artboards;
 	} else if (sort === ArtboardSortEnum.Left2RightByArtboard) {
 		return artboards.sort(function(a, b) {
-			if (a.frame.y > b.frame.y + b.frame.height / 2) {
-				return a.frame.y - b.frame.y + b.frame.height / 2;
+			if (a.frame.y + a.frame.height / 2 < b.frame.y) {
+				return -1;
+			}
+
+			if (b.frame.y + b.frame.height / 2 < a.frame.y) {
+				return 1;
 			}
 
 			return a.frame.x - b.frame.x;
 		});
 	} else if (sort === ArtboardSortEnum.Right2LeftByArtboard) {
 		return artboards.sort(function(a, b) {
-			if (a.frame.y > b.frame.y + b.frame.height / 2) {
-				return a.frame.y - b.frame.y + b.frame.height / 2;
+			if (b.frame.y + b.frame.height / 2 < a.frame.y) {
+				return -1;
+			}
+
+			if (a.frame.y + a.frame.height / 2 < b.frame.y) {
+				return 1;
 			}
 
 			return b.frame.x - a.frame.x;
 		});
 	} else if (sort === ArtboardSortEnum.Top2BottomByArtboard) {
 		return artboards.sort(function(a, b) {
-			if (a.frame.x > b.frame.x + b.frame.width / 2) {
-				return a.frame.x - b.frame.x + b.frame.width / 2;
+			if (a.frame.x + a.frame.width / 2 < b.frame.x) {
+				return -1;
+			}
+
+			if (b.frame.x + b.frame.width / 2 < a.frame.x) {
+				return 1;
 			}
 
 			return a.frame.y - b.frame.y;
