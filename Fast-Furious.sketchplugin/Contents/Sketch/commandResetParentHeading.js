@@ -5482,9 +5482,11 @@ function createHeading(artboard, originalX, originalY, headingLevel, headingText
       x: serialAndContentX,
       y: (groupHeight - serialAndContentHeight) / 2,
       // 无法固定高度，用此方法代替
-      height: groupHeight
+      height: groupHeight,
+      width: 100
     }
-  }); // 连接线
+  });
+  serialAndContent.adjustToFit(); // 连接线
 
   var separator = new ShapePath({
     name: 'separator',
@@ -5567,6 +5569,7 @@ function createHeading(artboard, originalX, originalY, headingLevel, headingText
       height: groupHeight
     }
   });
+  console.log(GroupWidth, groupHeight);
   group.adjustToFit();
   group.layers = [placeholder, serialAndContent, separator, page];
   return group;
