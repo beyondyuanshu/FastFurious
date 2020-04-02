@@ -545,7 +545,7 @@ function checkHeading(artboard) {
 
 					// 标题格式正确，判断是否需要提示指定父级标题
 					let currentSerial = override.value.split(' ')[0];
-					if (currentSerial.endsWith('1') && !currentSerial.startsWith(LastHeadingSerial)) {
+					if (currentSerial.endsWith('.1') && !currentSerial.startsWith(LastHeadingSerial)) {
 						let parentHeading = Settings.layerSettingForKey(artboard, 'parentHeading');
 						if (!parentHeading) {
 							console.log('should add parent heading:', artboard.name);

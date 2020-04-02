@@ -9,7 +9,7 @@
     "**/.hg": true,
     "**/.DS_Store": true,
     "**/node_modules": true,
-    "**/Fast-Furious.sketchplugin": true
+    "**/*.sketchplugin": true
   },
   "editor.tabSize": 2,
   "editor.formatOnSave": true,

@@ -5826,7 +5826,7 @@ function checkHeading(artboard) {
           // 标题格式正确，判断是否需要提示指定父级标题
           var currentSerial = override.value.split(' ')[0];
 
-          if (currentSerial.endsWith('1') && !currentSerial.startsWith(LastHeadingSerial)) {
+          if (currentSerial.endsWith('.1') && !currentSerial.startsWith(LastHeadingSerial)) {
             var parentHeading = Settings.layerSettingForKey(artboard, 'parentHeading');
 
             if (!parentHeading) {
